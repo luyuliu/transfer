@@ -1,0 +1,131 @@
+<html>
+
+<head>
+	<title>COTA Transfer Map</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="theme-color" content="#000000">
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+	<link rel="shortcut icon" href="./img/favicon.ico">
+	<!-- Libraries-->
+	<!-- Load Leaflet from -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
+	<script src="./js/leaflet.js"></script>
+	<!-- Load Esri Leaflet -->
+	<script src="./js/esri-leaflet.js"></script>
+	<!-- Load jquery -->
+	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+	<!-- Load Bootstrap -->
+	<script src="./js/bootstrap.min.js"></script>
+
+	<!-- awesomemarkers -->
+	<script src="./js/leaflet.awesome-markers.min.js"></script>
+
+
+
+
+	<!-- Load css-->
+	<link rel="stylesheet" href="./css/leaflet.awesome-markers.css">
+	<link rel="stylesheet" href="http://code.ionicframework.com/ionicons/1.5.2/css/ionicons.min.css">
+	<link rel="stylesheet" href="./css/bootstrap.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css">
+	<link rel="stylesheet" href="./css/bootleaf.css">
+
+</head>
+
+<body>
+	<div id="container">
+		<!-- navigation bar -->
+		<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+			<div class="container-fluid">
+
+				<div class="navbar-header" id="mapheader">
+					<a class="navbar-brand mapheader" id="about-btn" href="#">COTA Transfer Map</a>
+				</div>
+				<div class="navbar-collapse collapse">
+
+				</div>
+				<!--/.navbar-collapse -->
+			</div>
+		</div>
+		<div id="sidebar">
+			<div class="sidebar-wrapper">
+
+				<div class="panel-group" id="accordion1" role="tablist" aria-multiselectable="true">
+					<div class="panel panel-default" style="margin:0">
+						<div class="panel-heading" role="tab" id="headingOne0" style="margin:0">
+							<a class="panel-title" data-toggle="collapse" data-parent="#accordion" href="#collapseOne0" aria-expanded="true" aria-controls="collapseOne0">Setting
+								<button type="button" class="btn btn-xs btn-default pull-right" title="Click to hide sidebar" id="sidebar-hide-btn">
+									<i class="fa fa-chevron-left"></i>
+								</button>
+							</a>
+						</div>
+
+
+					</div>
+
+				</div>
+
+				<div class="panel panel-default" style="margin:0">
+					<div class="panel-heading" role="tab" id="headingOne1" style="margin:0">
+						<a class="panel-title" data-toggle="collapse" data-parent="#accordion" href="#collapseOne2" aria-expanded="true" aria-controls="collapseOne2">POI List
+						</a>
+					</div>
+					<div id="collapseOne2" class="panel-collapse collapse collapse" role="tabpanel" aria-labelledby="headingOne2" style="margin:0">
+						<div id="table-wrapper" style="overflow:scroll;height:80px;width:100%;overflow:auto">
+							<table class="table table-hover" id="feature-list">
+								<thead class="hidden">
+									<tr>
+										<th>Icon</th>
+										<tr>
+											<tr>
+												<th>Name</th>
+												<tr>
+													<tr>
+														<th>Chevron</th>
+														<tr>
+								</thead>
+								<tbody id="POI-list" class="list"></tbody>
+							</table>
+						</div>
+
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<div class="mini-submenu" title="Expand the map control">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		</div>
+
+		<div id="map">
+
+			<div id="loading" style="display: none;">
+				<div class="loading-indicator">
+					<div class="progress progress-striped active">
+						<div class="progress-bar progress-bar-info progress-bar-full"></div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+
+	<!-- main.js -->
+	<script src="./script/main.js"></script>
+	<link rel="stylesheet" href="./script/style.css">
+
+</body>
+
+</html>
