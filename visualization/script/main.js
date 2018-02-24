@@ -18,6 +18,8 @@ function animateSidebar() {
   });
 }
 
+
+
 var baseLayer = L.esri.basemapLayer('Topographic')
 map = L.map("map", {
   zoom: 13,
