@@ -1,4 +1,21 @@
-DOMAIN = {'pair': {}}
+DOMAIN = {
+    'agency': {},
+    'calendar': {},
+    'calendar_dates': {},
+    'fare_attributes': {},
+    'fare_rules': {},
+    'routes': {},
+    'shapes': {},
+    'stop_times': {},
+    'stops': {},
+    'transfer': {'datasource':{
+        "source":'transfer'
+    }
+    },
+    'trips': {},
+    'tripupdate': {},
+    'vehicle': {}
+}
 
 # Let's just use the local mongod instance. Edit as needed.
 
@@ -12,3 +29,5 @@ MONGO_PORT = 27017
 #MONGO_PASSWORD = '<your password>'
 
 MONGO_DBNAME = 'cota_gtfs_1'
+
+ALLOW_UNKNOWN=True
