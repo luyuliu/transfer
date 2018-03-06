@@ -31,7 +31,7 @@ map = L.map("map", {
 });
 
 
-
+/*
 stopsLayer = new L.markerClusterGroup({
   spiderfyOnMaxZoom: true,
   showCoverageOnHover: false,
@@ -81,4 +81,6 @@ $.get("https://luyuliu.github.io/CURIO-Map/data/COGOArrayGeoJSON.json", function
   stopsFullLayer.addData(data);
   stopsLayer.addLayer(stopsFullLayer)
   map.addLayer(stopsLayer);
-});
+});*/
+
+//read in the stop transfer pair
