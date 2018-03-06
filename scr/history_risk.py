@@ -11,6 +11,7 @@ db_transfer=db_GTFS.transfer
 
 db_feed= client.cota_tripupdate
 db_tripupdate=db_feed.trips
+db_real_transfer=db_feed.transfer
 
 # date setup
 def daterange(start_date, end_date):
@@ -37,11 +38,18 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
     
     print(today_date)
     for each_transfer in db_schedule:
+        
         b_trip_id=each_transfer["b_tid"]
         a_trip_id=each_transfer["a_tid"]
         walking_time=each_transfer["w_time"]
         b_stop_id=each_transfer["b_stid"]
         a_stop_id=each_transfer["a_stid"]
+        real_transfer={}
+        real_transfer["a_stid"]=a_stop_id
+        real_transfer["a_tid"]=a_trip_id
+        real_transfer["b_stid"]=b_stop_id
+        real_transfer["b_tid"]=b_trip_id
+        real_transfer["w_time"]=walking_time
         
         a_real_time=-1
         print(int(today_date),int(b_trip_id))
@@ -50,16 +58,18 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
         
         if db_real_a_trip==[] or db_real_b_trip==[]:
             #no record found!
+            real_transfer["diff"]=None
+            real_transfer["status"]=None
+            db_real_transfer.insert(real_transfer)
             ####################################################
-            continue;
+            continue
 
         #print(db_real_b_trip)
         nearest_sequence_id=99999
         b_real_time=-1
         print(list(db_real_b_trip))
         for each_b_trip in db_real_b_trip:
-            print(each_b_trip)
-            each_b_trip=list(each_b_trip)
+            #print(each_b_trip)
             b_seq=json.loads(each_b_trip["seq"])
             flag=False
             for each_b_seq in b_seq:
