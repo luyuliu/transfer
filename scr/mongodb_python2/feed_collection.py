@@ -52,7 +52,7 @@ def CollectingVehicleposition():
     return [entities, len(feed.entity), len(entities)]
 
 def CollectingGTFSstatic():
-    filehandle, _ = urllib.urlretrieve('https://www.cota.com/COTA/media/COTAContent/OpenGTFSData.zip')
+    filehandle='I:\\OSU\\data\\data\\OpenGTFSData_1022.zip'
     gtfs_zipfile = zipfile.ZipFile(filehandle, 'r')
     gtfs_filelist = gtfs_zipfile.namelist()
     dic_gtfs = {}
