@@ -45,13 +45,13 @@ class Haversine:
         self.feet=self.miles*5280               # output distance in feet
         
 def calculateDiff(BTimeString,ATimeString):
-    time=BTimeString[0].split(":")
+    time=BTimeString.split(":")
     hours=int(time[0])
     minutes=int(time[1])
     seconds=int(time[2])
     BTotalSeconds=hours*3600+minutes*60+seconds
 
-    time=ATimeString[0].split(":")
+    time=ATimeString.split(":")
     hours=int(time[0])
     minutes=int(time[1])
     seconds=int(time[2])
@@ -145,7 +145,7 @@ for BStop_id in stopsDicKeys:#Second part of the trip
     B=stopsDic[BStop_id]
     BLat=B["stop_lat"]
     BLon=B["stop_lon"]
-    print(BStop_id)
+    print(BStop_id) #necessary
     for AStop_id in stopsDicKeys:#First part of the trip
         A=stopsDic[AStop_id]
         ALat=A["stop_lat"]
@@ -175,9 +175,9 @@ for BStop_id in stopsDicKeys:#Second part of the trip
                     if tripsDic[Bj]["route_id"]==tripsDic[Ai]["route_id"]:
                         continue;
                     ATimeString=stopTimesDic[Ai][AStop_id]["arrival_time"]#Ait
-                    print(ATimeString,BTimeString)
+                    #print(ATimeString,BTimeString)
                     scheduleDiff=calculateDiff(BTimeString,ATimeString)#gap
-                    if scheduleDiff[2]<realWalkingTime or scheduleDiff[2]<=0:
+                    if scheduleDiff[2]>realWalkingTime or scheduleDiff[2]<=0:
                         continue;
                     if closestScheduleDiff>scheduleDiff[2]:
                         closestScheduleDiff=scheduleDiff[2]
@@ -199,7 +199,7 @@ for BStop_id in stopsDicKeys:#Second part of the trip
                 line["b_service_id"]=tripsDic[Bj]["service_id"]
                 line["b_time"]=closestBTime
 
-                line["diff"]=closestScheduleDiff
+                line["diff"]=closestBTime-closestATime
                 line["w_time"]=round(realWalkingTime,2)
                 
                 db_transfer.insert(line)

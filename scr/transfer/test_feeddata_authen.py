@@ -11,7 +11,6 @@ db_trip=db_GTFS.trips
 
 db_feed= client.cota_tripupdate
 db_tripupdate=db_feed.trips
-db_real_transfer=db_feed.transfer
 
 # date setup
 def daterange(start_date, end_date):

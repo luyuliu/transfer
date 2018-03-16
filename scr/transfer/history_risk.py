@@ -11,7 +11,6 @@ db_transfer=db_GTFS.transfer
 
 db_feed= client.cota_tripupdate
 db_tripupdate=db_feed.trips
-db_real_transfer=db_feed.transfer
 
 # date setup
 def daterange(start_date, end_date):
@@ -41,23 +40,32 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
     db_today_collection=db_history[today_date]
 
     #data retrival
-    db_schedule=db_transfer.find({"b_sid":str(service_id)})# the scheduled transfers for today
+    db_schedule=db_transfer.find({"b_service_id":str(service_id)})# the scheduled transfers for today
     
     print(today_date)
+    
+    True_count=0
+    False_count=0
+    None_count=0
+
     for each_transfer in db_schedule:
-        
-        b_trip_id=each_transfer["b_tid"]
-        a_trip_id=each_transfer["a_tid"]
+        #old_sum=True_count+False_count+None_count
+
+        b_trip_id=each_transfer["b_trip_id"]
+        a_trip_id=each_transfer["a_trip_id"]
         walking_time=each_transfer["w_time"]
-        b_stop_id=each_transfer["b_stid"]
-        a_stop_id=each_transfer["a_stid"]
+        b_stop_id=each_transfer["b_stop_id"]
+        a_stop_id=each_transfer["a_stop_id"]
+
         real_transfer={}
         real_transfer["a_stop_id"]=a_stop_id
         real_transfer["a_trip_id"]=a_trip_id
+        real_transfer["a_time"]=each_transfer["a_time"]
+
         real_transfer["b_stop_id"]=b_stop_id
         real_transfer["b_trip_id"]=b_trip_id
+        real_transfer["b_time"]=each_transfer["b_time"]
         real_transfer["w_time"]=walking_time
-        
         
         db_real_b_trip=list(db_tripupdate.find({"start_date":int(today_date),"trip_id":int(b_trip_id)}))
         db_real_a_trip=list(db_tripupdate.find({"start_date":int(today_date),"trip_id":int(a_trip_id)}))
@@ -67,12 +75,13 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
             #no record found!
             real_transfer["diff"]=None
             real_transfer["status"]=None
+            None_count+=1
             db_today_collection.insert(real_transfer)
             ####################################################
             continue
 
         #print(db_real_b_trip)
-        nearest_sequence_id=99999
+        b_nearest_sequence_id=99999
         b_real_time=-1
         for each_b_trip in db_real_b_trip:
             #print(each_b_trip)
@@ -80,15 +89,15 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
             flag=False
             for each_b_seq in b_seq:
                 if each_b_seq["stop"]==b_stop_id:
-                    if nearest_sequence_id>each_b_seq["seq"]:
-                        nearest_sequence_id=each_b_seq["seq"]
+                    if b_nearest_sequence_id>each_b_seq["seq"]:
+                        b_nearest_sequence_id=each_b_seq["seq"]
                         b_real_time=each_b_seq["arr"]
                     flag=True
                     break
             if flag==False:# when flag is false, it means no target stop detected. It also means the bus already passed the bus.
                 break;
 
-        nearest_sequence_id=99999        
+        a_nearest_sequence_id=99999
         a_real_time=-1
         for each_a_trip in db_real_a_trip:
             #print(each_a_trip)
@@ -96,14 +105,24 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
             flag=False
             for each_a_seq in a_seq:
                 if each_a_seq["stop"]==a_stop_id:
-                    if nearest_sequence_id>each_a_seq["seq"]:
-                        nearest_sequence_id=each_a_seq["seq"]
+                    if a_nearest_sequence_id>each_a_seq["seq"]:
+                        a_nearest_sequence_id=each_a_seq["seq"]
                         a_real_time=each_a_seq["arr"]
                     flag=True
                     break
             if flag==False:# when flag is false, it means no target stop detected. It also means the bus already passed the bus.
                 break;
 
+        real_transfer["b_real_time"]=b_real_time
+        real_transfer["a_real_time"]=a_real_time
+        real_transfer["diff"]=b_real_time-a_real_time
+        if real_transfer["diff"]<real_transfer["w_time"]:
+            real_transfer["status"]=False # the difference between real time is less than the walking time, which means the user can't catch up
+            False_count+=1
+        else:
+            real_transfer["status"]=True
+            True_count+=1
 
-
+        db_today_collection.insert(real_transfer)
+        #print(True_count,False_count,None_count,True_count+False_count+None_count)
 
