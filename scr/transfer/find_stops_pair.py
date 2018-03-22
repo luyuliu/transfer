@@ -1,5 +1,5 @@
 baseLocation="I:\\OSU\\Transfer"
-dataLocation="I:\\OSU\\data\\data\\OpenGTFSData_1022"
+dataLocation="I:\\OSU\\data\\data\\OpenGTFSData_FEB"
 import csv, json, math
 from pymongo import MongoClient
 stopsDic={}
@@ -72,7 +72,7 @@ with open(dataLocation+'\\stops.txt', newline='') as stopsFile:
         rowDic={}
         for key in range(len(stopsDicKeys)):
             rowDic[stopsDicKeys[key]]=row[key]
-        rowDic["stop_trip_id"]=[]#record of each stop's trip id
+        rowDic["stop_trip_id"]=[]#record of each stop's trip id WHICH it is involved in
         stopsDic[row[0]]=(rowDic)# The key is stop_id
 print("Stops done.")
 
@@ -123,12 +123,13 @@ print("Stop_times done.")
 
 #To add trip information to stopsDic
 #Will be some trips which have some stops but those stops don't have arrival time
-trip_id_list=stopTimesDic.keys()
+trip_id_list=stopTimesDic.keys()# Every trip's id
 for a_trip_id in trip_id_list:
     stopsAgg=stopTimesDic[a_trip_id]
     stop_id_list=stopsAgg.keys()
     for a_stop_id in stop_id_list:
-        stopsDic[a_stop_id]["stop_trip_id"].append(a_trip_id)
+        stopsDic[a_stop_id]["stop_trip_id"].append(a_trip_id) # in the stopsDic, there's a dic recording all the trips it is involved.
+        #print("xixi",a_stop_id,a_trip_id)
 '''
 with open(dataLocation + '\\stops_aggregated.json', 'w') as fp:
     json.dump(stopsDic, fp)
@@ -145,7 +146,8 @@ for BStop_id in stopsDicKeys:#Second part of the trip
     B=stopsDic[BStop_id]
     BLat=B["stop_lat"]
     BLon=B["stop_lon"]
-    print(BStop_id) #necessary
+    summ=0
+    transfersumm=0
     for AStop_id in stopsDicKeys:#First part of the trip
         A=stopsDic[AStop_id]
         ALat=A["stop_lat"]
@@ -156,7 +158,7 @@ for BStop_id in stopsDicKeys:#Second part of the trip
             continue
         else:#this pair is a potential one. Gap=walkingtime
             realWalkingTime=distance/walkingSpeed
-
+            singletransfercount=0
             for Bj in stopsDic[BStop_id]["stop_trip_id"]:#Bj: The trip_id in a stopDic stop record
                 BTimeString=stopTimesDic[Bj][BStop_id]["arrival_time"]#Bjt
                 BService_id=tripsDic[Bj]["service_id"]
@@ -172,12 +174,12 @@ for BStop_id in stopsDicKeys:#Second part of the trip
                     if BService_id=="1" or BService_id=="2" or BService_id=="3":
                         if AService_id!=BService_id:
                             continue
-                    if tripsDic[Bj]["route_id"]==tripsDic[Ai]["route_id"]:
+                    if tripsDic[Bj]["route_id"]==tripsDic[Ai]["route_id"]: #Same route! Doesn't count as a transfer
                         continue;
                     ATimeString=stopTimesDic[Ai][AStop_id]["arrival_time"]#Ait
                     #print(ATimeString,BTimeString)
                     scheduleDiff=calculateDiff(BTimeString,ATimeString)#gap
-                    if scheduleDiff[2]>realWalkingTime or scheduleDiff[2]<=0:
+                    if scheduleDiff[2]<realWalkingTime or scheduleDiff[2]<=0 or scheduleDiff[2]>=1800: # The condition for non-transfers
                         continue;
                     if closestScheduleDiff>scheduleDiff[2]:
                         closestScheduleDiff=scheduleDiff[2]
@@ -193,19 +195,24 @@ for BStop_id in stopsDicKeys:#Second part of the trip
                 line["a_trip_id"]=closestATripId
                 line["a_service_id"]=tripsDic[closestATripId]["service_id"]
                 line["a_time"]=closestATime
+                line["a_route_id"]=closestARouteId
                 
                 line["b_stop_id"]=BStop_id
                 line["b_trip_id"]=Bj
                 line["b_service_id"]=tripsDic[Bj]["service_id"]
                 line["b_time"]=closestBTime
+                line["b_route_id"]=tripsDic[Bj]["route_id"]
 
                 line["diff"]=closestBTime-closestATime
                 line["w_time"]=round(realWalkingTime,2)
                 
                 db_transfer.insert(line)
-                
+                summ+=1
+                singletransfercount+=1
                 #print(line)
-
+            if singletransfercount!=0:
+                transfersumm+=1
+    print(BStop_id,transfersumm,summ) #necessary
 print("Pairs calculation done.")
 
 '''

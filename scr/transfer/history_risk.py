@@ -17,8 +17,11 @@ def daterange(start_date, end_date):
     for n in range(int ((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
-start_date = date(2017, 11, 29)
-end_date = date(2018, 1, 3)
+'''start_date = date(2018, 1, 29)
+end_date = date(2018, 2, 25)'''
+
+start_date = date(2017, 1, 29)
+end_date = date(2018, 2, 25)
 
 db_history=client.cota_history_transfer
 
@@ -67,9 +70,9 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
         real_transfer["b_time"]=each_transfer["b_time"]
         real_transfer["w_time"]=walking_time
         
-        db_real_b_trip=list(db_tripupdate.find({"start_date":int(today_date),"trip_id":int(b_trip_id)}))
-        db_real_a_trip=list(db_tripupdate.find({"start_date":int(today_date),"trip_id":int(a_trip_id)}))
-        #print(int(today_date),int(b_trip_id),db_real_b_trip)
+        db_real_b_trip=list(db_tripupdate.find({"start_date":(today_date),"trip_id":(b_trip_id)}))
+        db_real_a_trip=list(db_tripupdate.find({"start_date":(today_date),"trip_id":(a_trip_id)}))
+        #print((today_date),(b_trip_id),db_real_b_trip)
 
         if db_real_a_trip==[] or db_real_b_trip==[]:
             #no record found!
@@ -77,15 +80,16 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
             real_transfer["status"]=None
             None_count+=1
             db_today_collection.insert(real_transfer)
+            print(True_count,False_count,None_count,True_count+False_count+None_count)
             ####################################################
             continue
 
-        #print(db_real_b_trip)
+        # Find the real_record in the feed data according to the tripid and stopid
         b_nearest_sequence_id=99999
         b_real_time=-1
         for each_b_trip in db_real_b_trip:
             #print(each_b_trip)
-            b_seq=json.loads(each_b_trip["seq"])
+            b_seq=each_b_trip["seq"]
             flag=False
             for each_b_seq in b_seq:
                 if each_b_seq["stop"]==b_stop_id:
@@ -96,12 +100,19 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
                     break
             if flag==False:# when flag is false, it means no target stop detected. It also means the bus already passed the bus.
                 break;
+        if b_real_time==-1:# If b_real_time=-1, then there are no such a stop detected in the 
+            real_transfer["diff"]=None
+            real_transfer["status"]=None
+            None_count+=1
+            db_today_collection.insert(real_transfer)
+            print(True_count,False_count,None_count,True_count+False_count+None_count)
+            continue;
 
         a_nearest_sequence_id=99999
         a_real_time=-1
         for each_a_trip in db_real_a_trip:
             #print(each_a_trip)
-            a_seq=json.loads(each_b_trip["seq"])
+            a_seq=each_b_trip["seq"]
             flag=False
             for each_a_seq in a_seq:
                 if each_a_seq["stop"]==a_stop_id:
@@ -112,6 +123,13 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
                     break
             if flag==False:# when flag is false, it means no target stop detected. It also means the bus already passed the bus.
                 break;
+        if a_real_time==-1:
+            real_transfer["diff"]=None
+            real_transfer["status"]=None
+            None_count+=1
+            db_today_collection.insert(real_transfer)
+            print(True_count,False_count,None_count,True_count+False_count+None_count)
+            continue;
 
         real_transfer["b_real_time"]=b_real_time
         real_transfer["a_real_time"]=a_real_time
@@ -123,6 +141,6 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
             real_transfer["status"]=True
             True_count+=1
 
-        db_today_collection.insert(real_transfer)
-        #print(True_count,False_count,None_count,True_count+False_count+None_count)
+        #db_today_collection.insert(real_transfer)
+        print(True_count,False_count,None_count,True_count+False_count+None_count)
 
