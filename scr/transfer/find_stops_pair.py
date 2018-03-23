@@ -8,7 +8,7 @@ tripsDic={}
 transferDic={}
 
 walkingSpeed=1.4#meters per second
-walkingTime=5*60#seconds
+walkingTime=71.43#seconds // In order to limit the number of transfer pair
 searchRadius=walkingSpeed*walkingTime
 
 class Haversine:
@@ -159,6 +159,7 @@ for BStop_id in stopsDicKeys:#Second part of the trip
         else:#this pair is a potential one. Gap=walkingtime
             realWalkingTime=distance/walkingSpeed
             singletransfercount=0
+
             for Bj in stopsDic[BStop_id]["stop_trip_id"]:#Bj: The trip_id in a stopDic stop record
                 BTimeString=stopTimesDic[Bj][BStop_id]["arrival_time"]#Bjt
                 BService_id=tripsDic[Bj]["service_id"]
