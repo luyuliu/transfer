@@ -23,64 +23,146 @@ function animateSidebar() {
 var baseLayer = L.esri.basemapLayer('Topographic')
 map = L.map("map", {
   zoom: 13,
-  center: [40.68510, -73.94136],
+  center: [39.98, -83],
   layers: [baseLayer],
   zoomControl: false,
   attributionControl: false,
   maxZoom: 18
 });
 
-
+var arrow = L.polyline([[57, -19], [60, -12]], {}).addTo(map);
 /*
+var arrowHead = L.polylineDecorator(arrow, {
+  patterns: [
+    { offset: '100%', repeat: 0, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true } }) }
+  ]
+}).addTo(map);*/
+
+
 stopsLayer = new L.markerClusterGroup({
   spiderfyOnMaxZoom: true,
   showCoverageOnHover: false,
   zoomToBoundsOnClick: true,
-  disableClusteringAtZoom: 16,
-  clusterPane: layerID + "Pane"
+  disableClusteringAtZoom: 15,
 });
-stopsFullLayer = L.geoJson(null, {
-  pointToLayer: function (feature, latlng) {
-    return L.marker(latlng, {
-      icon: L.icon({
-        iconUrl: "./img/bus.png",
-        iconSize: [14, 14],
-        iconAnchor: [7, 14],
-        popupAnchor: [0, -25]
-      }),
-      title: feature.properties.name,
-      riseOnHover: true,
-      pane: layerID + "Pane"
-    });
-  },
-  onEachFeature: function (feature, layer) {
-    if (feature.properties) {
-      var content = "<h4>" + "Station Name: " + feature.properties.name + "<br/>" + "Available Bikes: " + feature.properties.availableBikes + "<br/>" + "Available Docks: " + feature.properties.availableDocks + "<br/>" + "Last Checked: " + feature.properties.timestamp + "</h4><br/>" +
-        "<!--Streetview Div-->" +
-        "<div  id='streetview' style='margin-top:10px;'><img class='center-block' src='https://maps.googleapis.com/maps/api/streetview?size=300x300&location=" + layer.getLatLng().lat + "," + layer.getLatLng().lng + "&key=AIzaSyCewGkupcv7Z74vNIVf05APjGOvX4_ygbc' height='300' width='300'></img><hr><h4 class='text-center'><a href='http://maps.google.com/maps?q=&layer=c&cbll=" + layer.getLatLng().lat + "," + layer.getLatLng().lng + "' target='_blank'>Google Streetview</a></h4</div>";
 
 
-      layer.on({
-        click: function (e) {
-          var popup = L.popup().setLatLng([feature.geometry.coordinates[1], feature.geometry.coordinates[0]]).setContent(content).openOn(map);
-        }
-      });
-      $("#feature-list tbody").append('<tr class="feature-row" layerID="' + layerID + '" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="18" height="18" src="img/stops.png"></td><td class="feature-name">' + layer.feature.properties.name + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
-      theaterSearch.push({
-        name: layer.feature.properties.NAME,
-        address: layer.feature.properties.ADDRESS1,
-        source: "Theaters",
-        id: L.stamp(layer),
-        lat: layer.feature.geometry.coordinates[1],
-        lng: layer.feature.geometry.coordinates[0]
-      });
-    }
+
+
+$(document).ready(function () {
+  $('#date-input').val(("2018-01-29"))
+})
+
+
+
+
+
+
+function createCORSRequest(method, url) {
+  var xhr = new XMLHttpRequest();
+  if ("withCredentials" in xhr) {
+    xhr.open(method, url, true);
+
+  } else if (typeof XDomainRequest != "undefined") {
+    xhr = new XDomainRequest();
+    xhr.open(method, url);
+
+  } else {
+    xhr = null;
+
   }
+  return xhr;
+}
+
+function returnPolygonLayer(transfer,e) {
+  var b_stop_id=transfer.b_stop_id
+  var b_lat=e.latlng.lat
+  var b_lng=e.latlng.lng
+  
+  var arrow = L.polyline([[, ], [b_lat, b_lng]], {}).addTo(map);
+
+
+
+}
+
+
+$("#start-btn").click(function () {
+  /*
+ console.log("create")
+ xhr = createCORSRequest('GET', "http://127.0.0.1:5001/");
+ if (!xhr) {
+   throw new Error('CORS not supported');
+ }
+
+ xhr.onload = function() {
+   var text = xhr.responseText;
+   var title = getTitle(text);
+   alert('Response from CORS request to ' + url + ': ' + title);
+ };*/
+
+  todayDate = $("#date-input").val()
+  console.log(todayDate)
+
+  $.get("http://127.0.0.1:5001/stops", function (rawstops) {
+    stops = rawstops._items
+
+
+    data1 = {}
+    data1.type = "FeatureCollection"
+    data1.features = []
+    for (var i = 0; i < stops.length; i++) {
+      everyStop = {}
+      everyStop.type = "Feature"
+      everyStop.geometry = {}
+      everyStop.geometry.type = "Point"
+      everyStop.geometry.coordinates = [parseFloat(stops[i].stop_lon), parseFloat(stops[i].stop_lat)]
+      everyStop.properties = {}
+      everyStop.properties.stop_name = stops[i].stop_name
+      everyStop.properties.stop_id = stops[i].stop_id
+      everyStop.properties.stop_id = stops[i].stop_id
+      data1.features.push(everyStop)
+    }
+
+    //data1=JSON.stringify(data1)
+    console.log(data1)
+
+    stopsFullLayer = L.geoJson(data1, {
+      pointToLayer: function (feature, latlng) {
+        return L.marker(latlng, {
+          icon: L.icon({
+            iconUrl: "./img/bus.png",
+            iconSize: [14, 14],
+            iconAnchor: [7, 14],
+            popupAnchor: [0, -25]
+          }),
+          riseOnHover: true,
+        });
+      },
+      onEachFeature: function (feature, layer) {
+        if (feature.properties) {
+          layer.on({
+            click: function (e) {
+              var transferURL = 'http://127.0.0.1:5002/trips?where={"b_stop_id":"' + feature.properties.stop_id + '"}'
+
+              $.get(transferURL, function (rawtransfers) {
+                console.log("xixi")
+                transfers = rawtransfers._items
+                console.log(transfers)
+                for (var i = 0; i < transfers.length; i++) {
+                  eval(feature.properties.stop_id + i + "Layer=returnPolygonLayer(transfers[i],e)")
+                }
+
+              })
+            }
+          });
+
+        }
+      }
+    });
+    stopsLayer.addLayer(stopsFullLayer)
+    map.addLayer(stopsLayer);
+  });
 });
-$.get("https://luyuliu.github.io/CURIO-Map/data/COGOArrayGeoJSON.json", function (data) {
-  stopsFullLayer.addData(data);
-  stopsLayer.addLayer(stopsFullLayer)
-  map.addLayer(stopsLayer);
-});*/
+
 
 //read in the stop transfer pair

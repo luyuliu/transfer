@@ -19,7 +19,7 @@
 	<!-- Load Esri Leaflet -->
 	<script src="./js/esri-leaflet.js"></script>
 	<!-- Load jquery -->
-	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script src="./js/jquery-3.2.1.min.js"></script>
 
 	<!-- Load Bootstrap -->
 	<script src="./js/bootstrap.min.js"></script>
@@ -27,16 +27,17 @@
 	<!-- awesomemarkers -->
 	<script src="./js/leaflet.awesome-markers.min.js"></script>
 
-
-
+	<!-- cluster -->
+	<script src="./js/leaflet.markercluster.js"></script>
 
 	<!-- Load css-->
 	<link rel="stylesheet" href="./css/leaflet.awesome-markers.css">
 	<link rel="stylesheet" href="http://code.ionicframework.com/ionicons/1.5.2/css/ionicons.min.css">
 	<link rel="stylesheet" href="./css/bootstrap.css">
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css">
+	<link rel="stylesheet" href="./css/leaflet.css">
 	<link rel="stylesheet" href="./css/bootleaf.css">
+	<link rel="stylesheet" href="./css/MarkerCluster.css">
+	<link rel="stylesheet" href="./css/MarkerCluster.Default.css">
 
 </head>
 
@@ -70,7 +71,17 @@
 
 
 					</div>
+					<div id="collapseOne0" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne0" style="margin:0">
+						<div class="panel-body">
+							<form method="get">
+								Date:
+								<input type="date" id="date-input" />
+							</form>
 
+							<button id="start-btn" type="button" class="btn btn-primary btn">Start</button>
+
+						</div>
+					</div>
 				</div>
 
 				<div class="panel panel-default" style="margin:0">

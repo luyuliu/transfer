@@ -52,7 +52,7 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
     None_count=0
     Max_count=len(db_schedule)
     Total_count=0
-
+    
     for each_transfer in db_schedule:
         #old_sum=True_count+False_count+None_count
         Total_count+=1
@@ -89,7 +89,7 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
             real_transfer["status"]="RECORD_MISS"
             None_count+=1
             db_today_collection.insert(real_transfer)
-            #print("M: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
+            print("M: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
             ####################################################
             continue
 
@@ -114,7 +114,7 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
             real_transfer["status"]="STOP_MISS_B"
             None_count+=1
             db_today_collection.insert(real_transfer)
-            #print("B: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
+            print("B: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
             continue;
 
         a_nearest_sequence_id=99999
@@ -137,7 +137,7 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
             real_transfer["status"]="STOP_MISS_A"
             None_count+=1
             db_today_collection.insert(real_transfer)
-            #print("A: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
+            print("A: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
             continue;
 
         real_transfer["b_real_time"]=b_real_time
@@ -151,5 +151,5 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
             True_count+=1
 
         db_today_collection.insert(real_transfer)
-        #print("V: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
+        print("V: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
 
