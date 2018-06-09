@@ -2,7 +2,7 @@ from google.transit import gtfs_realtime_pb2
 import urllib, threading, zipfile, csv, StringIO, time
 from pymongo import MongoClient
 
-##collect all stop time sequences      
+##collect all stop time sequences
 def CollectingTripupdate():       
     feed = gtfs_realtime_pb2.FeedMessage()
     response = urllib.urlopen('http://realtime.cota.com/TMGTFSRealTimeWebService/TripUpdate/TripUpdates.pb')
@@ -50,7 +50,7 @@ def CollectingVehicleposition():
     return [entities, len(feed.entity), len(entities)]
 
 def CollectingGTFSstatic(): ##needs to modify
-    filehandle='I:\\OSU\\data\\OpenGTFSData_FEB.zip'
+    filehandle='I:\\OSU\\data\\data\\OpenGTFSData_0601.zip'
     gtfs_zipfile = zipfile.ZipFile(filehandle, 'r')
     gtfs_filelist = gtfs_zipfile.namelist()
     dic_gtfs = {}
