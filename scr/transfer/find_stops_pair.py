@@ -142,82 +142,93 @@ for AStopID in stopsDicKeys:  # First part of the trip
             microDic={}# Single stop pair's trip pairs dictionary.
             for ATripID in stopsDic[AStopID]["stop_trip_id"]:
                 AServiceID = tripsDic[ATripID]["service_id"]
-                ARoute_id=returnRouteID(ATripID)
+                ARouteID=returnRouteID(ATripID)
                 ATimeString = stopTimesDic[ATripID][AStopID]["arrival_time"]  # Ait
-                closestScheduleDiff = 99999  # trip_id+stop_id=time and location. AKA Ait
-                closestBTripId = -1
-                closestBRouteId = -1
-                closestATime = -1
-                closestBTime = -1
+                
+                #Service control:
+                if AServiceID != "1" and AServiceID != "2" and AServiceID != "3":
+                    continue;
 
                 # B trips iteration begins
                 # BTripID: The trip_id in a stopDic stop record
                 for BTripID in stopsDic[BStopID]["stop_trip_id"]:
                     BServiceID = tripsDic[BTripID]["service_id"]
-                    BRoute_id=returnRouteID(BTripID)
-                    if BServiceID == "1" or BServiceID == "2" or BServiceID == "3":
+                    BRouteID=returnRouteID(BTripID)
+
+                    # Service ID control: right now just look at 1 2 3. Let aside all others.
+                    if BServiceID != "1" and BServiceID != "2" and BServiceID != "3":
+                        continue;
+                    else:
                         if AServiceID != BServiceID:
                             continue
-                    # Same route! Doesn't count as a transfer
+
+                    # Service ID control ends.
+
+                    ## The exceptions.
+                    # Same route doesn't count as a transfer, regardless of the direction
                     if tripsDic[BTripID]["route_id"] == tripsDic[ATripID]["route_id"]:# this route_id is abs.
                         continue
                     # The arrival/departure time at the B stop
                     BTimeString = stopTimesDic[BTripID][BStopID]["arrival_time"]
                     scheduleDiff = calculateDiff(
-                        ATimeString, BTimeString)  # gap
+                        BTimeString,  ATimeString)  # gap
                     # The condition for non-transfers
                     if scheduleDiff[2] < realWalkingTime or scheduleDiff[2] <= 0 or scheduleDiff[2] >= 1800:
                         continue
-                    
+                    ## The exception ends.
+
+                    # For a distint route-pair, there will be multiple trip pairs. And a_trip_id can be the primary index for them, since for a transfer
+                    # from Route A to Route B, one trip of route A can only have one corresponding best (scheduled) trip of route B.
                     try:
-                        microDic[]
+                        microDic[ARouteID]
                     except KeyError:
-                        lines[line["a_route_id"]] = {}
+                        microDic[ARouteID] = {}
                     else:
                         pass
 
-    
-                    if closestScheduleDiff > scheduleDiff[2]:
-                        closestScheduleDiff = scheduleDiff[2]
-                        closestATime = scheduleDiff[1]
-                        closestBTime = scheduleDiff[0]
-                        closestATripID = ATripID
-                        closestARouteID = tripsDic[ATripID]["route_id"]
+                    try:
+                        microDic[ARouteID][BRouteID]
+                    except KeyError:
+                        microDic[ARouteID][BRouteID] = {}
+                    else:
+                        pass
+                    
+                    try:
+                        microDic[ARouteID][BRouteID][ATripID]
+                    except KeyError: # The record doesn't exist. So it must be the first trip pairs we encounter. So just write it to the microDic.
+                        # trip pairs build-up starts.
+                        # initialization. All of them.
+                        line = {}
+
+                        line["a_stop_id"] = AStopID
+                        line["a_trip_id"] = ATripID
+                        line["a_service_id"] = AServiceID
+                        line["a_time"] = scheduleDiff[1]
+                        line["a_route_id"] = ARouteID
+
+                        line["b_stop_id"] = BStopID
+                        line["b_trip_id"] = BTripID #to be updated
+                        line["b_service_id"] = BServiceID #to be updated
+                        line["b_time"] = scheduleDiff[0] #to be updated
+                        line["b_route_id"] = BRouteID
+
+                        line["diff"] = scheduleDiff[2]
+                        line["w_time"] = round(realWalkingTime, 2)
+                        # trip pairs build-up ends.
+                        microDic[ARouteID][BRouteID][ATripID] = line
+                        # Ends. To next BTripID
+                    else: # The record exist, so compare them to update the microDic
+                        if microDic[ARouteID][BRouteID][ATripID]["diff"]>scheduleDiff[2]:
+                            line["b_trip_id"] = BTripID #to be updated
+                            line["b_service_id"] = BServiceID #to be updated
+                            line["b_time"] = scheduleDiff[0] #to be updated
+
+
                 if closestBTripId == -1:
                     continue
                 # B trips iteration ends
 
-                # trip pairs build-up starts.
-                line = {}
-                line["a_stop_id"] = AStopID
-                line["a_trip_id"] = closestATripID
-                line["a_service_id"] = tripsDic[closestATripID]["service_id"]
-                line["a_time"] = closestATime
-                tag = 0
-                if tripsDic[closestATripID]["direction_id"] == 0:
-                    tag = 1
-                elif tripsDic[closestATripID]["direction_id"] == 1:
-                    tag = -1
-                else:
-                    print("wrong.")
-                line["a_route_id"] = int(closestARouteID) * tag
-
-                line["b_stop_id"] = BStopID
-                line["b_trip_id"] = BTripID
-                line["b_service_id"] = tripsDic[BTripID]["service_id"]
-                line["b_time"] = closestBTime
-                tag = 0
-                if tripsDic[BTripID]["direction_id"] == 0:
-                    tag = 1
-                elif tripsDic[BTripID]["direction_id"] == 1:
-                    tag = -1
-                else:
-                    print("wrong.")
-                line["b_route_id"] = int(tripsDic[BTripID]["route_id"]) * tag
-
-                line["diff"] = closestBTime - closestATime
-                line["w_time"] = round(realWalkingTime, 2)
-                # trip pairs build-up ends.
+                
 
                 # Add this trip-pair to lines, which didn't sort.
                 try:
