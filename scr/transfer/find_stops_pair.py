@@ -114,7 +114,7 @@ for AStopID in stopsDicKeys:  # First part of the trip
     ALon = A["stop_lon"]
     print("Stop A: "+str(AStopID)+ ", start.")
 
-    lines = {}  # For each generating stop, it will maintain a dic storing:
+    stopPairsDic = {}  # For each generating stop, it will maintain a dic storing:
     # 1. All the combination of routes; So the tree's key/leaf is route number.
     # route number: if direction_id=0 then tag=1; if direction_id=1 then tag=-1;
     # 2. For each route pair, there are only one series of trip pairs among all the possible stop pairs.
@@ -122,7 +122,7 @@ for AStopID in stopsDicKeys:  # First part of the trip
     # The selectin process is separately conducted for each route pair, and we will only include the nearest's stop's trips pairs into the lines dictionary.
     # 3. For one route pair, the leaf contains: 1. line; 2. walking time. Shorter walking time means better.
 
-    # B stops iteration begins
+    ## B stops iteration begins
     for BStopID in stopsDicKeys:  # Second part of the trip
         B = stopsDic[BStopID]
         BLat = B["stop_lat"]
@@ -132,7 +132,7 @@ for AStopID in stopsDicKeys:  # First part of the trip
         if distance > searchRadius:
             continue
         else:  # this pair is a potential one. Gap=walkingtime
-            realWalkingTime = distance / walkingSpeed
+            realWalkingTime = round(distance / walkingSpeed,2)
 
             # A trips iteration begins
             # ATripID: The trip_id in a stopDic stop record
@@ -212,8 +212,8 @@ for AStopID in stopsDicKeys:  # First part of the trip
                         line["b_time"] = scheduleDiff[0] #to be updated
                         line["b_route_id"] = BRouteID
 
-                        line["diff"] = scheduleDiff[2]
-                        line["w_time"] = round(realWalkingTime, 2)
+                        line["diff"] = scheduleDiff[2] #to be updated
+                        line["w_time"] = realWalkingTime # will always be the same so don't have to change.
                         # trip pairs build-up ends.
                         microDic[ARouteID][BRouteID][ATripID] = line
                         # Ends. To next BTripID
@@ -222,40 +222,49 @@ for AStopID in stopsDicKeys:  # First part of the trip
                             line["b_trip_id"] = BTripID #to be updated
                             line["b_service_id"] = BServiceID #to be updated
                             line["b_time"] = scheduleDiff[0] #to be updated
+                            line["diff"] = scheduleDiff[2] #to be updated
 
-
-                if closestBTripId == -1:
-                    continue
                 # B trips iteration ends
-
-                
-
-                # Add this trip-pair to lines, which didn't sort.
-                try:
-                    lines[line["a_route_id"]]
-                except KeyError:
-                    lines[line["a_route_id"]] = {}
-                else:
-                    pass
-
-                try:
-                    lines[line["a_route_id"]][line["b_route_id"]]
-                except KeyError:
-                    lines[line["a_route_id"]][line["b_route_id"]] = {
-                        "lines": [], "w_time": line["w_time"]}
-                else:
-                    pass
-
-                if lines[line["a_route_id"]][line["b_route_id"]]["w_time"] > line["w_time"]:
-                    lines[line["a_route_id"]][line["b_route_id"]] = {
-                        "lines": [], "w_time": line["w_time"]}
-                lines[line["a_route_id"]][line["b_route_id"]
-                                          ]["lines"].append(line)
-                # Add ends.
 
             # A trip iteration ends. Current stop pair ends.
 
-            # Begin incorporate
+            ## Incorporation starts.
+            # Incorporate the microDic to the stopPairDic
+            # The idea is basically search the current microDic and put each leaf to the stopPairDic
+            
+            ARouteIDKeys=microDic.keys()
+            for iARouteID in ARouteIDKeys:
+                BRouteIDKeys=microDic[iARouteID].keys()
+                for jBRouteID in BRouteIDKeys:
+                    try:
+                        stopPairsDic[iARouteID]
+                    except KeyError:
+                        stopPairsDic[iARouteID] = {}
+                    else:
+                        pass
 
-            print("Stop B: "+str(BStopID)+", done. ") #necessary
+                    try:
+                        stopPairsDic[iARouteID][jBRouteID]
+                    except KeyError:
+                        stopPairsDic[iARouteID][jBRouteID] = {"tripPairsList":microDic[iARouteID][jBRouteID],
+                            "w_time": realWalkingTime}
+                    else:
+                        if stopPairsDic[iARouteID][jBRouteID]["w_time"] > realWalkingTime:
+                            stopPairsDic[iARouteID][jBRouteID] = {"tripPairsList":microDic[iARouteID][jBRouteID],
+                            "w_time": realWalkingTime}
+            ## Incorporation ends.
+
+        print("Stop B: "+str(BStopID)+", done. ") #necessary
+    ## B stops iteration ends
+
+    # Database push starts
+    
+
+
+    # Database push ends
+
+
+
+# A stops iteration ends
+
 print("Pairs calculation done.")
