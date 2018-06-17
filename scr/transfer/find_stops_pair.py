@@ -67,9 +67,9 @@ def calculateDiff(BTimeString, ATimeString):
 def returnRouteID(trip_id):
     target=tripsDic[trip_id]
     tag = 0
-    if tripsDic[closestATripID]["direction_id"] == 0:
+    if tripsDic[trip_id]["direction_id"] == 0:
         tag = 1
-    elif tripsDic[closestATripID]["direction_id"] == 1:
+    elif tripsDic[trip_id]["direction_id"] == 1:
         tag = -1
     else:
         return False
@@ -254,7 +254,7 @@ for AStopID in stopsDicKeys:  # First part of the trip
                             "w_time": realWalkingTime}
             ## Incorporation ends.
 
-        print("Stop B: "+str(BStopID)+", done. ") #necessary
+    print("Stop B: "+str(BStopID)+", done. ") #necessary
     ## B stops iteration ends
 
     # Database push starts

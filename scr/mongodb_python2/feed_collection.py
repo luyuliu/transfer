@@ -50,7 +50,7 @@ def CollectingVehicleposition():
     return [entities, len(feed.entity), len(entities)]
 
 def CollectingGTFSstatic(): ##needs to modify
-    filehandle='I:\\OSU\\data\\data\\OpenGTFSData_0601.zip'
+    filehandle='/home/luyu/Downloads/OpenGTFSData.zip'
     gtfs_zipfile = zipfile.ZipFile(filehandle, 'r')
     gtfs_filelist = gtfs_zipfile.namelist()
     dic_gtfs = {}
