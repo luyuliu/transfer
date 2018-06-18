@@ -67,9 +67,9 @@ def calculateDiff(BTimeString, ATimeString):
 def returnRouteID(trip_id):
     target=tripsDic[trip_id]
     tag = 0
-    if tripsDic[trip_id]["direction_id"] == 0:
+    if tripsDic[trip_id]["direction_id"] == "0":
         tag = 1
-    elif tripsDic[trip_id]["direction_id"] == 1:
+    elif tripsDic[trip_id]["direction_id"] == "1":
         tag = -1
     else:
         return False
@@ -85,6 +85,7 @@ stopsList = list(current_collection.find({}))
 for i in range(len(stopsList)):
     stopsList[i]["stop_trip_id"] = []
     stopsDic[stopsList[i]["stop_id"]] = stopsList[i]
+stopsLength=len(stopsList)# length of stopsLIst
 
 current_collection = db["trips"]
 tripsList = list(current_collection.find({}))
@@ -107,12 +108,14 @@ print("Import done.")
 db_transfer = db.transfer
 
 stopsDicKeys = stopsDic.keys()
+stopsCount=0
+transferTotalCount=0
 # A stops iteration begins
 for AStopID in stopsDicKeys:  # First part of the trip
+    stopsCount=stopsCount+1
     A = stopsDic[AStopID]
     ALat = A["stop_lat"]
     ALon = A["stop_lon"]
-    print("Stop A: "+str(AStopID)+ ", start.")
 
     stopPairsDic = {}  # For each generating stop, it will maintain a dic storing:
     # 1. All the combination of routes; So the tree's key/leaf is route number.
@@ -227,14 +230,16 @@ for AStopID in stopsDicKeys:  # First part of the trip
                 # B trips iteration ends
 
             # A trip iteration ends. Current stop pair ends.
-
+            
             ## Incorporation starts.
             # Incorporate the microDic to the stopPairDic
             # The idea is basically search the current microDic and put each leaf to the stopPairDic
             
             ARouteIDKeys=microDic.keys()
+            
             for iARouteID in ARouteIDKeys:
                 BRouteIDKeys=microDic[iARouteID].keys()
+                
                 for jBRouteID in BRouteIDKeys:
                     try:
                         stopPairsDic[iARouteID]
@@ -252,16 +257,32 @@ for AStopID in stopsDicKeys:  # First part of the trip
                         if stopPairsDic[iARouteID][jBRouteID]["w_time"] > realWalkingTime:
                             stopPairsDic[iARouteID][jBRouteID] = {"tripPairsList":microDic[iARouteID][jBRouteID],
                             "w_time": realWalkingTime}
+                
             ## Incorporation ends.
-
-    print("Stop B: "+str(BStopID)+", done. ") #necessary
     ## B stops iteration ends
 
+
+    transferCount=0
     # Database push starts
-    
+    if stopPairsDic=={}:
+        print("Stop A: "+str(AStopID)+ ", empty.")
+        print("-----------------"+str(stopsCount)+" / "+str(stopsLength)+" : "+str(transferTotalCount)+"-----------------")
+        continue
 
-
+    ARouteIDKeys=stopPairsDic.keys()
+    for iARouteID in ARouteIDKeys:
+        BRouteIDKeys=stopPairsDic[iARouteID].keys()
+        for jBRouteID in BRouteIDKeys:
+            transferIDKeys=stopPairsDic[iARouteID][jBRouteID]["tripPairsList"].keys()
+            for aTransfer in transferIDKeys:
+                db_transfer.insert(stopPairsDic[iARouteID][jBRouteID]["tripPairsList"][aTransfer])
+                transferCount=transferCount+1
     # Database push ends
+    
+    transferTotalCount=transferTotalCount+transferCount
+    print("-----------------"+str(AStopID)+ " : ("+str(stopsCount)+" / "+str(stopsLength)+") : [ "+str(transferCount)+" | "+str(transferTotalCount)+" ] -----------------")
+
+
 
 
 
