@@ -1,3 +1,6 @@
+# Adapted from Yongha Park.
+# Python 2
+
 ## for mobility map export trip update feeds (their common portion with GTFS static schedules) and GTFS schedules separately!
 
 import time, math, json, threading

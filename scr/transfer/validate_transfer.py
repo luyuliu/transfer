@@ -1,3 +1,12 @@
+# Status code:
+# 0: true
+# 1: false
+# 2: false_timelessness
+# 3: missing_a
+# 4: missing_b
+# 5: missing_records
+
+
 import csv, json, math
 from pymongo import MongoClient
 from datetime import timedelta, date
@@ -48,6 +57,7 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
     True_count=0
     False_count=0
     None_count=0
+    Pseudo_count=0
     Max_count=len(db_schedule)
     Total_count=0
 
@@ -69,12 +79,12 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
         real_transfer["a_stop_id"]=a_stop_id
         real_transfer["a_trip_id"]=a_trip_id
 
-        real_transfer["a_time"]=each_transfer["a_time"]+int((single_date-date(1970,1,1)).total_seconds())
+        real_transfer["a_time"]=each_transfer["a_time"]+int((single_date-date(1970,1,1)).total_seconds())+18000# time gap
 
         real_transfer["b_stop_id"]=b_stop_id
         real_transfer["b_trip_id"]=b_trip_id
 
-        real_transfer["b_time"]=each_transfer["b_time"]+int((single_date-date(1970,1,1)).total_seconds())
+        real_transfer["b_time"]=each_transfer["b_time"]+int((single_date-date(1970,1,1)).total_seconds())+18000# time gap
         real_transfer["w_time"]=walking_time
         real_transfer["scheduled_diff"]=each_transfer["b_time"]-each_transfer["a_time"]
         
@@ -86,10 +96,10 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
         if db_real_a_trip==[] or db_real_b_trip==[]:
             #no record found!
             real_transfer["diff"]=None
-            real_transfer["status"]="RECORD_MISS"
+            real_transfer["status"]=5#"RECORD_MISS"
             None_count+=1
             db_today_collection.insert(real_transfer)
-            print("M: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
+            print("M: ",True_count,False_count,Pseudo_count,None_count,(True_count+False_count+Pseudo_count)/(Pseudo_count+True_count+False_count+None_count))
             ####################################################
             continue
 
@@ -106,15 +116,15 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
                         b_nearest_sequence_id=each_b_seq["seq"]
                         b_real_time=each_b_seq["arr"]
                     flag=True
-                    break
+                    break;
             if flag==False:# when flag is false, it means no target stop detected. It also means the bus already passed the bus.
                 break;
         if b_real_time==-1:# If b_real_time=-1, then there are no such a stop detected in the 
             real_transfer["diff"]=None
-            real_transfer["status"]="STOP_MISS_B"
+            real_transfer["status"]=4#"STOP_MISS_B"
             None_count+=1
             db_today_collection.insert(real_transfer)
-            print("B: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
+            print("B: ",True_count,False_count,Pseudo_count,None_count,(True_count+False_count+Pseudo_count)/(Pseudo_count+True_count+False_count+None_count))
             continue;
 
         a_nearest_sequence_id=99999
@@ -134,22 +144,29 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
                 break;
         if a_real_time==-1:
             real_transfer["diff"]=None
-            real_transfer["status"]="STOP_MISS_A"
+            real_transfer["status"]=3#"STOP_MISS_A"
             None_count+=1
             db_today_collection.insert(real_transfer)
-            print("A: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
+            print("A: ",True_count,False_count,Pseudo_count,None_count,(True_count+False_count+Pseudo_count)/(Pseudo_count+True_count+False_count+None_count))
             continue;
 
         real_transfer["b_real_time"]=b_real_time
         real_transfer["a_real_time"]=a_real_time
         real_transfer["diff"]=b_real_time-a_real_time
-        if real_transfer["diff"]<real_transfer["w_time"]:
-            real_transfer["status"]=False # the difference between real time is less than the walking time, which means the user can't catch up
+
+
+        if real_transfer["diff"]<real_transfer["w_time"]: # False
+            real_transfer["status"]=1#False # the difference between real time is less than the walking time, which means the user can't catch up
             False_count+=1
-        else:
-            real_transfer["status"]=True
-            True_count+=1
+        else: # True
+            if real_transfer["a_real_time"]+real_transfer["w_time"]>real_transfer["b_time"]:
+                print(real_transfer["a_real_time"],real_transfer["w_time"],real_transfer["b_time"],real_transfer["b_real_time"])
+                real_transfer["status"]=2#"FALSE_TIMELESSNESS"
+                Pseudo_count+=1
+            else:
+                real_transfer["status"]=0#True
+                True_count+=1
 
         db_today_collection.insert(real_transfer)
-        print("V: ",True_count,False_count,None_count,(True_count+False_count)/(True_count+False_count+None_count))
+        print("V: ",True_count,False_count,Pseudo_count,None_count,(True_count+False_count+Pseudo_count)/(Pseudo_count+True_count+False_count+None_count))
 

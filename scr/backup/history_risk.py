@@ -41,7 +41,7 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
     db_today_collection=db_history[today_date]
 
     #data retrival
-    db_schedule=list(db_transfer.find({"b_service_id":str(service_id)}))# the scheduled transfers for today
+    db_schedule=list(db_transfer.find({"a_service_id":str(service_id)}))# the scheduled transfers for today
     
     print(today_date)
     

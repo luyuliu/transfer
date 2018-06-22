@@ -104,7 +104,7 @@ for eachStopTimes in stopTimesList:
         pass
     stopTimesDic[eachStopTimes["trip_id"]][eachStopTimes["stop_id"]]=eachStopTimes
 print("Import done.")
-
+#print(tripsDic)
 db_transfer = db.transfer
 
 stopsDicKeys = stopsDic.keys()
@@ -265,8 +265,7 @@ for AStopID in stopsDicKeys:  # First part of the trip
     transferCount=0
     # Database push starts
     if stopPairsDic=={}:
-        print("Stop A: "+str(AStopID)+ ", empty.")
-        print("-----------------"+str(stopsCount)+" / "+str(stopsLength)+" : "+str(transferTotalCount)+"-----------------")
+        print("-----------------"+str(AStopID)+ " : ("+str(stopsCount)+" / "+str(stopsLength)+") : [ "+str(transferCount)+" | "+str(transferTotalCount)+" ] -----------------")
         continue
 
     ARouteIDKeys=stopPairsDic.keys()

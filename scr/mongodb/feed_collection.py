@@ -1,3 +1,7 @@
+# Adapted from Yongha Park
+# Python 2
+
+
 from google.transit import gtfs_realtime_pb2
 import urllib, threading, zipfile, csv, StringIO, time
 from pymongo import MongoClient
@@ -50,7 +54,7 @@ def CollectingVehicleposition():
     return [entities, len(feed.entity), len(entities)]
 
 def CollectingGTFSstatic(): ##needs to modify
-    filehandle='/home/luyu/Downloads/OpenGTFSData.zip'
+    filehandle='I:\\OSU\\data\\data\\OpenGTFSData_201802.zip'
     gtfs_zipfile = zipfile.ZipFile(filehandle, 'r')
     gtfs_filelist = gtfs_zipfile.namelist()
     dic_gtfs = {}
