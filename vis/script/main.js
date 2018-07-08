@@ -18,6 +18,28 @@ function animateSidebar() {
   });
 }
 
+function switchStatus(status,line) {
+  switch (status) {
+    case 0:
+      line.zero_count++;
+
+      break;
+
+    case 1:
+      line.one_count++;
+
+      break;
+
+    case 2:
+      line.two_count++;
+
+      break;
+
+    default:
+      line.miss_count++;
+  }
+  line.total_count++;
+}
 
 
 var baseLayer = L.esri.basemapLayer('Topographic')
@@ -74,19 +96,21 @@ function createCORSRequest(method, url) {
   return xhr;
 }
 
-function returnPolygonLayer(transfer,e) {
-  var b_stop_id=transfer.b_stop_id
-  var b_lat=e.latlng.lat
-  var b_lng=e.latlng.lng
-  
-  var arrow = L.polyline([[, ], [b_lat, b_lng]], {}).addTo(map);
+function returnPolygonLayer(transfer, e) {
+  var b_stop_id = transfer.b_stop_id
+  var b_lat = e.latlng.lat
+  var b_lng = e.latlng.lng
+
+  var arrow = L.polyline([[,], [b_lat, b_lng]], {}).addTo(map);
 
 
 
 }
 
+var tran;
 
 $("#start-btn").click(function () {
+//$(document).ready(function () {
   /*
  console.log("create")
  xhr = createCORSRequest('GET', "http://127.0.0.1:5001/");
@@ -100,7 +124,7 @@ $("#start-btn").click(function () {
    alert('Response from CORS request to ' + url + ': ' + title);
  };*/
 
-  todayDate = $("#date-input").val()
+  todayDate = $("#date-input").val().replace('-', '').replace('-', '')
   console.log(todayDate)
 
   $.get("http://127.0.0.1:5001/stops", function (rawstops) {
@@ -124,7 +148,7 @@ $("#start-btn").click(function () {
     }
 
     //data1=JSON.stringify(data1)
-    console.log(data1)
+    //console.log(data1)
 
     stopsFullLayer = L.geoJson(data1, {
       pointToLayer: function (feature, latlng) {
@@ -139,24 +163,63 @@ $("#start-btn").click(function () {
         });
       },
       onEachFeature: function (feature, layer) {
-        if (feature.properties) {
-          layer.on({
-            click: function (e) {
-              var transferURL = 'http://127.0.0.1:5002/trips?where={"b_stop_id":"' + feature.properties.stop_id + '"}'
+        //if (feature.properties) {
+        layer.on({
+          click: function (e) {
+            var transferURL = 'http://127.0.0.1:5003/' + todayDate + '/?where={"a_stop_id":"' + feature.properties.stop_id + '"}';
+            $.get(transferURL, function (rawTransfers) {
+              transfers = rawTransfers._items;
+              tran = transfers//debug
+              console.log(transfers.length);
+              stopsDic = {};// The dictionary of stops pair for a stop.
+              for (var i in transfers) {
+                console.log(transfers[i].b_stop_id);
+                if (stopsDic[transfers[i].b_stop_id] === undefined) {
+                  // The start of initialization.
+                  var line = {}
+                  var stopDetail = stops.filter(function (item) { return (item.stop_id == transfers[i].b_stop_id); })[0];
+                  //console.log(stops)
+                  line.lat = stopDetail.stop_lat;
+                  line.lon = stopDetail.stop_lon;
+                  line.total_count = 0;
+                  line.zero_count = 0;
+                  line.one_count = 0;
+                  line.two_count = 0;
+                  line.miss_count = 0;
+                  // The end of initialization
 
-              $.get(transferURL, function (rawtransfers) {
-                console.log("xixi")
-                transfers = rawtransfers._items
-                console.log(transfers)
-                for (var i = 0; i < transfers.length; i++) {
-                  eval(feature.properties.stop_id + i + "Layer=returnPolygonLayer(transfers[i],e)")
+                  switchStatus(transfers[i].status, line);
+
+                  stopsDic[transfers[i].b_stop_id] = line
                 }
+                else {
+                  switchStatus(transfers[i].status, stopsDic[transfers[i].b_stop_id]);
+                }
+              }
 
-              })
-            }
-          });
+              console.log(stopsDic)
 
-        }
+              var contentString="";
+              for (var j=0;j<Object.keys(stopsDic).length;j++){
+                console.log(Object.keys(stopsDic)[j])
+                contentString=contentString+"<h3>"+Object.keys(stopsDic)[j]+"</h3>"
+                contentString=contentString+"Total: "+stopsDic[Object.keys(stopsDic)[j]].total_count
+                +"</br>Miss: "+stopsDic[Object.keys(stopsDic)[j]].miss_count
+                +"</br>Timeless: "+stopsDic[Object.keys(stopsDic)[j]].zero_count
+                +"</br>ATP: "+stopsDic[Object.keys(stopsDic)[j]].one_count
+                +"</br>False_timeless: "+stopsDic[Object.keys(stopsDic)[j]].two_count
+
+              }
+              
+              var popup = L.popup().setLatLng([feature.geometry.coordinates[1], feature.geometry.coordinates[0]]).setContent(contentString).openOn(map);
+              //var popup = new L.Popup().setLatlng(e.latlng).setContent(contentString);
+              popup.openOn(map);
+            })
+
+          }
+        });
+
+        //}
       }
     });
     stopsLayer.addLayer(stopsFullLayer)

@@ -1,6 +1,6 @@
 DOMAIN = {
     'agency': {'datasource': {
-        "source": 'agency'}},
+        'source': 'agency'}},
     'calendar': {'datasource': {
         "source": 'calendar'}},
     'calendar_dates': {'datasource': {
@@ -16,11 +16,9 @@ DOMAIN = {
     'stop_times': {'datasource': {
         "source": 'stop_times'}},
     'stops': {'datasource': {
-        "source": 'stops'} },
+        "source": 'stops'}},
     'transfer': {'datasource': {
-        "source": 'transfer'
-    }
-    },
+        "source": 'transfer'}},
     'trips': {'datasource': {
         "source": 'trips'}},
     'tripupdate': {'datasource': {
@@ -48,4 +46,4 @@ PAGINATION_LIMIT = 10000
 
 PAGINATION_DEFAULT = 10000
 
-X_DOMAINS='*'
+X_DOMAINS = '*'

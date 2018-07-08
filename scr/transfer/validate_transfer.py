@@ -32,7 +32,7 @@ def daterange(start_date, end_date):
 '''start_date = date(2018, 1, 29)
 end_date = date(2018, 2, 25)'''
 
-start_date = date(2018, 1, 29)
+start_date = date(2018, 2, 5)
 end_date = date(2018, 2, 25)
 
 db_history = client.cota_transfer
