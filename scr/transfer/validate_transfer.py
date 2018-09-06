@@ -18,7 +18,7 @@ import time
 client = MongoClient('mongodb://localhost:27017/')
 db_GTFS = client.cota_gtfs_1
 db_transfer = db_GTFS.transfer
-
+db_seq = db_GTFS.trip_seq
 db_feed = client.cota_tripupdate
 
 db_history = client.cota_transfer
@@ -46,6 +46,10 @@ end_date = date(2018, 2, 8)
 start_date = date(2018, 2, 8)
 end_date = date(2018, 2, 25)
 '''
+
+
+def sortQuery(A):
+    return A["seq"]
 
 
 # main loop
@@ -191,19 +195,13 @@ for single_date in daterange(start_date, end_date):
 
         ar = time.time()
         ##### Start: Calculate the real receiving trip. And the addtional time penalty #####
-        if real_transfer["b_ro"] > 0:
-            b_route_id = real_transfer["b_ro"]
-            b_direction_id = "0"
-        else:
-            b_route_id = -real_transfer["b_ro"]
-            b_direction_id = "1"
 
+        '''
         false_trips_list = list(db_GTFS.trips.find(
             {"route_id": "%03d" % b_route_id, "direction_id": b_direction_id, "service_id": str(service_id)}))  # Find all trips that could be a substitute. AND IT'S FROM THE SCHEDULE.
 
         i_sequence_id = 0
         flag_sequence_id = 0
-
         start_time = time.time()
         for each_trip in false_trips_list:  # For each trips, find the real departure time for it, which still satisfies the requirement: the departure time is after
                                             # the user's arrival time (stop A arrival time + walking time).
@@ -227,18 +225,31 @@ for single_date in daterange(start_date, end_date):
             i_sequence_id = i_sequence_id + 1
         end_time = time.time()
         print("queue",end_time - start_time)
+        '''
+
+        false_trips_list = list(db_seq.find({"service_id": str(
+            service_id), "stop_id": b_stop_id, "route_id": real_transfer["b_ro"]}))
+        # print(false_trips_list)
+        false_trips_list.sort(key=sortQuery)
+        # print(false_trips_list)
+        seq_query = list(db_seq.find({"service_id": str(
+            service_id), "stop_id": b_stop_id, "trip_id": b_trip_id}))[0]
+        if seq_query == []:
+            continue
+        flag_sequence_id = seq_query["seq"]
 
         for each_trip in false_trips_list:
+
             each_b_time = 0
             i_trip_id = each_trip["trip_id"]
-            if each_trip["sequence_id"] == None:
-                continue
+
+            seq_id = each_trip["seq"]
             # Find the b_alt_time for this trip_id and compare it to the b_alt_time (overall). Until we find the smallest one.
             # The most accurate feed must be the last one of the query result. (To be proven)
 
             alternative_b_trip = list(db_tripupdate.find({"trip_id": str(i_trip_id),
                                                           "seq": {"$elemMatch": {"stop": b_stop_id}}}))
-            
+
             '''print("length:",len(alternative_b_trip))
             for each_feed in alternative_b_trip:
                 tag=0
@@ -248,18 +259,19 @@ for single_date in daterange(start_date, end_date):
                         break
                     tag=tag+1'''
             if len(alternative_b_trip) == 0:
-                # print("i_trip_id",i_trip_id,"|","each_schedule",convertSeconds(each_trip["b_time"],single_date),"each_b_time",each_b_time,"id","|",each_trip["sequence_id"])
+                # print("i_trip_id",i_trip_id,"|","each_schedule",each_trip["time"]+int((single_date - date(1970, 1, 1)).total_seconds()) + \
+                # 18000,"each_b_time",each_b_time,"id","|",each_trip["seq"])
                 continue
             for b_stop_time in alternative_b_trip[len(alternative_b_trip) - 1]["seq"]:
                 if b_stop_time["stop"] == b_stop_id:
                     each_b_time = b_stop_time["arr"]
-                if b_stop_time["stop"] == b_stop_id and b_stop_time["arr"] >= a_real_time + real_transfer["w_t"]:
+                if b_stop_time["stop"] == b_stop_id and b_alt_time > b_stop_time["arr"] and b_stop_time["arr"] >= a_real_time + real_transfer["w_t"]:
                     b_alt_time = b_stop_time["arr"]
-                    b_alt_sequence_id = each_trip["sequence_id"] - \
-                        flag_sequence_id
+                    b_alt_sequence_id = seq_id - flag_sequence_id
                     b_alt_trip_id = i_trip_id
                     break
-            # print("i_trip_id",i_trip_id,"|","each_schedule",convertSeconds(each_trip["b_time"],single_date),"each_b_time",each_b_time,"id","|",each_trip["sequence_id"])
+            # print("i_trip_id",i_trip_id,"|","each_schedule",each_trip["time"]+int((single_date - date(1970, 1, 1)).total_seconds()) + \
+        # 18000,"each_b_time",each_b_time,"id","|",each_trip["seq"])
 
         # This means there's no alternative trip for this receiving trip. So you are doomed.
         if b_alt_time == 9999999999:
@@ -307,8 +319,8 @@ for single_date in daterange(start_date, end_date):
         # print(real_transfer["b_real_time"]-real_transfer["w_time"]-real_transfer["a_real_time"],real_transfer["status"])
 
         # print("status:",real_transfer["status"])
-        # print("b_alt_time", b_alt_time, "b_time", real_transfer["b_time"], "b_real_time", b_real_time,
-        #        "a_time", real_transfer["a_time"], "a_real_time", a_real_time, "w_time",real_transfer["w_time"],"b_alt_sequence_id", b_alt_sequence_id, "diff", b_real_time - a_real_time - real_transfer["w_time"],"alt_diff",b_alt_time - a_real_time - real_transfer["w_time"])
+        # print("b_alt_time", b_alt_time, "b_time", real_transfer["b_t"], "b_real_time", b_real_time,
+        #        "a_time", real_transfer["a_t"], "a_real_time", a_real_time, "w_time",real_transfer["w_t"],"b_alt_sequence_id", b_alt_sequence_id, "diff", b_real_time - a_real_time - real_transfer["w_t"],"alt_diff",b_alt_time - a_real_time - real_transfer["w_t"])
         print("V: ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "|",
               (Normal_count + Missed_count + Preemptive_count + Critical_count) / Total_count)
         # print("B:",b_stop_id,b_trip_id,"A:",a_stop_id,a_trip_id)
