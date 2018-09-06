@@ -69,14 +69,21 @@ for single_date in daterange(start_date, end_date):
         
         switch_status(single_result['status'],dic_stops[a_stop_id])
 
-    location='../../../Transfer_data/shp/'+today_date+"/"+today_date
+    location='I:/OSU/Transfer_data/nor_shp/'+today_date
     print(location)
-    w = shapefile.Writer(location, shapeType=shapefile.POINT)
+    w = shapefile.Writer(shapeType=1)
     w.field("stop_id","C")
     w.field("total_count","N")
     w.field("zero_count","N")
     w.field("one_count","N")
     w.field("two_count","N")
     w.field("miss_count","N")
+    for key, value in dic_stops.items():
+        w.record(key,value['total_count'],value['zero_count'],value['one_count'],value['two_count'],value['miss_count'])
+        w.point(float(value['lon']),float(value['lat']))
+
+    w.save(location)
+        
+        
 
     
