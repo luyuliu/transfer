@@ -20,7 +20,7 @@ db_GTFS = client.cota_gtfs_1
 db_transfer = db_GTFS.transfer
 db_seq = db_GTFS.trip_seq
 db_feed = client.cota_tripupdate
-
+db_realtime=client.cota_real_time
 db_history = client.cota_transfer
 
 
@@ -40,7 +40,7 @@ def daterange(start_date, end_date):
         yield start_date + timedelta(n)
 
 
-start_date = date(2018, 1, 31)
+start_date = date(2018, 1, 29)
 end_date = date(2018, 2, 8)
 '''
 start_date = date(2018, 2, 8)
@@ -51,7 +51,7 @@ end_date = date(2018, 2, 25)
 def sortQuery(A):
     return A["seq"]
 
-
+a_start=time.time()
 # main loop
 # enumerate every day in the range
 for single_date in daterange(start_date, end_date):
@@ -71,7 +71,7 @@ for single_date in daterange(start_date, end_date):
     # data retrival
     # the scheduled transfers for today
     db_schedule = list(db_transfer.find({"b_service_id": str(service_id)}))
-
+    db_realtime_collection=db_realtime["R"+today_date]
     print(today_date)
 
     Normal_count = 0
@@ -84,7 +84,7 @@ for single_date in daterange(start_date, end_date):
 
     records_count = 0
     records_collections = []
-
+    Total_sum_count=len(db_schedule)
     for each_transfer in db_schedule:
         a = time.time()
         print("----------------------------------------------")
@@ -141,15 +141,6 @@ for single_date in daterange(start_date, end_date):
         b_trip_feeds = list(db_tripupdate.find(
             {"trip_id": str(b_trip_id), "seq.stop": b_stop_id}))
 
-        '''                      
-        for each_feed in b_trip_feeds:
-            tag=0
-            for each_stop_time in each_feed["seq"]:
-                if each_stop_time["stop"] == b_stop_id:
-                    print(each_stop_time["arr"],tag)
-                    break
-                tag=tag+1
-        '''
         if len(b_trip_feeds) != 0:
             for b_stop_time in b_trip_feeds[len(b_trip_feeds) - 1]["seq"]:
                 if b_stop_time["stop"] == b_stop_id:
@@ -193,40 +184,7 @@ for single_date in daterange(start_date, end_date):
         b_alt_time = 9999999999
         ##### Done: Initialization #####
 
-        ar = time.time()
         ##### Start: Calculate the real receiving trip. And the addtional time penalty #####
-
-        '''
-        false_trips_list = list(db_GTFS.trips.find(
-            {"route_id": "%03d" % b_route_id, "direction_id": b_direction_id, "service_id": str(service_id)}))  # Find all trips that could be a substitute. AND IT'S FROM THE SCHEDULE.
-
-        i_sequence_id = 0
-        flag_sequence_id = 0
-        start_time = time.time()
-        for each_trip in false_trips_list:  # For each trips, find the real departure time for it, which still satisfies the requirement: the departure time is after
-                                            # the user's arrival time (stop A arrival time + walking time).
-                                            # Find the relative real time of departure from tripupdate database is not very easy since we have to look up every records
-                                            # in the query results, and find the nearest stop. But since in the query result, the sequence is already from the start to destination.
-                                            # So just go to the last record, and get the b_alt_time of this record.
-                                            # Then find the smallest/closest trip as the alternative trip for the trip B.
-            i_trip_id = each_trip["trip_id"]
-            stop_time_query = list(db_GTFS.stop_times.find(
-                {"trip_id": i_trip_id, "stop_id": b_stop_id}))
-
-            if len(stop_time_query) == 0:
-                each_trip["sequence_id"] = None
-                continue
-
-            each_trip["sequence_id"] = i_sequence_id
-            each_trip["b_time"] = stop_time_query[0]["arrival_time"]
-            if i_trip_id == b_trip_id:
-                flag_sequence_id = i_sequence_id
-
-            i_sequence_id = i_sequence_id + 1
-        end_time = time.time()
-        print("queue",end_time - start_time)
-        '''
-
         false_trips_list = list(db_seq.find({"service_id": str(
             service_id), "stop_id": b_stop_id, "route_id": real_transfer["b_ro"]}))
         # print(false_trips_list)
@@ -239,40 +197,19 @@ for single_date in daterange(start_date, end_date):
         flag_sequence_id = seq_query["seq"]
 
         for each_trip in false_trips_list:
-
-            each_b_time = 0
             i_trip_id = each_trip["trip_id"]
-
             seq_id = each_trip["seq"]
             # Find the b_alt_time for this trip_id and compare it to the b_alt_time (overall). Until we find the smallest one.
-            # The most accurate feed must be the last one of the query result. (To be proven)
-
-            alternative_b_trip = list(db_tripupdate.find({"trip_id": str(i_trip_id),
-                                                          "seq": {"$elemMatch": {"stop": b_stop_id}}}))
-
-            '''print("length:",len(alternative_b_trip))
-            for each_feed in alternative_b_trip:
-                tag=0
-                for each_stop_time in each_feed["seq"]:
-                    if each_stop_time["stop"] == b_stop_id:
-                        print(each_stop_time["arr"],tag)
-                        break
-                    tag=tag+1'''
-            if len(alternative_b_trip) == 0:
-                # print("i_trip_id",i_trip_id,"|","each_schedule",each_trip["time"]+int((single_date - date(1970, 1, 1)).total_seconds()) + \
-                # 18000,"each_b_time",each_b_time,"id","|",each_trip["seq"])
+            #print(b_stop_id,str(i_trip_id))
+            query_realtime=list(db_realtime_collection.find({"stop_id":b_stop_id,"trip_id":str(i_trip_id)}))
+            if query_realtime==[]:
                 continue
-            for b_stop_time in alternative_b_trip[len(alternative_b_trip) - 1]["seq"]:
-                if b_stop_time["stop"] == b_stop_id:
-                    each_b_time = b_stop_time["arr"]
-                if b_stop_time["stop"] == b_stop_id and b_alt_time > b_stop_time["arr"] and b_stop_time["arr"] >= a_real_time + real_transfer["w_t"]:
-                    b_alt_time = b_stop_time["arr"]
-                    b_alt_sequence_id = seq_id - flag_sequence_id
-                    b_alt_trip_id = i_trip_id
-                    break
-            # print("i_trip_id",i_trip_id,"|","each_schedule",each_trip["time"]+int((single_date - date(1970, 1, 1)).total_seconds()) + \
-        # 18000,"each_b_time",each_b_time,"id","|",each_trip["seq"])
-
+            i_real_time=query_realtime[0]["time"]
+            if b_alt_time > i_real_time and i_real_time >= a_real_time + real_transfer["w_t"]:
+                b_alt_time = i_real_time
+                b_alt_sequence_id = seq_id - flag_sequence_id
+                b_alt_trip_id = i_trip_id
+            
         # This means there's no alternative trip for this receiving trip. So you are doomed.
         if b_alt_time == 9999999999:
             b_alt_time = -1  # there's no an alternative trip.
@@ -281,8 +218,7 @@ for single_date in daterange(start_date, end_date):
 
         # print("real:",i_sequence_id,"flag:",flag_sequence_id,"skipped",skipped)
         ##### Done: Calculate the real receiving trip. And the addtional time penalty #####
-        br = time.time()
-        print("real_trip", br - ar)
+       
 
         # Instead of using diff and w_time to determine the status, we use ATP's N value.
         # Because the sequence of scheduled bus array is not static. Though theoretically yes.
@@ -309,24 +245,19 @@ for single_date in daterange(start_date, end_date):
         # The value of alternative trip. Could be "0" (not applicable), "-1" (doomed) or some actual trip id (in string format)
         real_transfer["b_a_tr"] = b_alt_trip_id
 
-        ass = time.time()
         records_collections.append(real_transfer)
-        bss = time.time()
-        print("append", bss - ass)
 
         # print(real_transfer["status"])
         # if real_transfer["status"] !=0:
         # print(real_transfer["b_real_time"]-real_transfer["w_time"]-real_transfer["a_real_time"],real_transfer["status"])
-
-        # print("status:",real_transfer["status"])
-        # print("b_alt_time", b_alt_time, "b_time", real_transfer["b_t"], "b_real_time", b_real_time,
-        #        "a_time", real_transfer["a_t"], "a_real_time", a_real_time, "w_time",real_transfer["w_t"],"b_alt_sequence_id", b_alt_sequence_id, "diff", b_real_time - a_real_time - real_transfer["w_t"],"alt_diff",b_alt_time - a_real_time - real_transfer["w_t"])
-        print("V: ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "|",
-              (Normal_count + Missed_count + Preemptive_count + Critical_count) / Total_count)
-        # print("B:",b_stop_id,b_trip_id,"A:",a_stop_id,a_trip_id)
-
         b = time.time()
-        print("total", b - a)
+        #print("status:",real_transfer["status"])
+        #print("b_alt_time", b_alt_time, "b_time", real_transfer["b_t"], "b_real_time", b_real_time,
+        #        "a_time", real_transfer["a_t"], "a_real_time", a_real_time, "w_time",real_transfer["w_t"],"b_alt_sequence_id", b_alt_sequence_id, "diff", b_real_time - a_real_time - real_transfer["w_t"],"alt_diff",b_alt_time - a_real_time - real_transfer["w_t"])
+        print("V: ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "||",
+              round((Normal_count + Missed_count + Preemptive_count + Critical_count) / Total_count,4),"||", round(Total_count/Total_sum_count,4)  ,"||",round(b - a,2),"||",round(b - a_start,2))
+        #print("B:",b_stop_id,b_trip_id,"A:",a_stop_id,a_trip_id)
+
 
         if records_count % 10000 == 9999:
             ass = time.time()
