@@ -11,14 +11,23 @@ def convertSeconds(BTimeString):
 
 # database setup
 client = pymongo.MongoClient('mongodb://localhost:27017/')
-db_GTFS = client.cota_gtfs_1
-db_seq=db_GTFS.trip_seq
-db_stops=db_GTFS.stops
-db_stop_times=db_GTFS.stop_times
-db_trips=db_GTFS.trips
-db_tripupdate=client.cota_tripupdate
+db_GTFS = client.cota_gtfs
+
+db_tripupdate=client.trip_update
 
 db_realtime=client.cota_real_time
+
+db_time_stamps_set=set()
+db_time_stamps=[]
+raw_stamps=db_GTFS.collection_names()
+for each_raw in raw_stamps:
+    each_raw=int(each_raw.split("_")[0])
+    db_time_stamps_set.add(each_raw)
+
+for each_raw in db_time_stamps_set:
+    db_time_stamps.append(each_raw)
+db_time_stamps.sort()
+
 
 # date setup
 
@@ -27,9 +36,18 @@ def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
+def find_gtfs_time_stamp(today_date,single_date):
+    today_seconds=int((single_date - date(1970, 1, 1)).total_seconds()) + 18000
+    backup=db_time_stamps[0]
+    for each_time_stamp in db_time_stamps:
+        if each_time_stamp - today_seconds> 86400:
+            return backup
+        backup=each_time_stamp
+    return db_time_stamps[len(db_time_stamps)-1]
+
 
 start_date = date(2018, 1, 29)
-end_date = date(2018, 2, 28)
+end_date = date(2018, 9, 3)
 
 time_matrix={}
 
@@ -39,6 +57,14 @@ for single_date in daterange(start_date, end_date):
     start_time=time.time()
     today_date = single_date.strftime("%Y%m%d")  # date
     db_feed_collection=db_tripupdate[today_date]
+    print("-----------------------",today_date,"-----------------------")
+
+    that_time_stamp=find_gtfs_time_stamp(today_date,single_date)
+        
+    db_seq=db_GTFS[str(that_time_stamp)+"_trip_seq"]
+    db_stops=db_GTFS[str(that_time_stamp)+"_stops"]
+    db_stop_times=db_GTFS[str(that_time_stamp)+"_stop_times"]
+    db_trips=db_GTFS[str(that_time_stamp)+"_trips"]
 
     db_realtime_collection=db_realtime["R"+today_date]
     db_feeds=list(db_feed_collection.find({}))
