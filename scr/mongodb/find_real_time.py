@@ -46,7 +46,7 @@ def find_gtfs_time_stamp(today_date,single_date):
     return db_time_stamps[len(db_time_stamps)-1]
 
 
-start_date = date(2018, 1, 29)
+start_date = date(2018, 7, 25)
 end_date = date(2018, 9, 3)
 
 time_matrix={}
