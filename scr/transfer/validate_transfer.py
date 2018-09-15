@@ -16,12 +16,30 @@ import time
 
 # database setup
 client = MongoClient('mongodb://localhost:27017/')
-db_GTFS = client.cota_gtfs_1
-db_transfer = db_GTFS.transfer
-db_seq = db_GTFS.trip_seq
-db_feed = client.cota_tripupdate
+db_GTFS = client.cota_gtfs
 db_realtime=client.cota_real_time
 db_history = client.cota_transfer
+
+db_time_stamps_set=set()
+db_time_stamps=[]
+raw_stamps=db_GTFS.collection_names()
+for each_raw in raw_stamps:
+    each_raw=int(each_raw.split("_")[0])
+    db_time_stamps_set.add(each_raw)
+
+for each_raw in db_time_stamps_set:
+    db_time_stamps.append(each_raw)
+db_time_stamps.sort()
+
+def find_gtfs_time_stamp(today_date,single_date):
+    today_seconds=int((single_date - date(1970, 1, 1)).total_seconds()) + 18000
+    backup=db_time_stamps[0]
+    for each_time_stamp in db_time_stamps:
+        if each_time_stamp - today_seconds> 86400:
+            return backup
+        backup=each_time_stamp
+    return db_time_stamps[len(db_time_stamps)-1]
+
 
 
 def convertSeconds(BTimeString, single_date):
@@ -41,7 +59,7 @@ def daterange(start_date, end_date):
 
 
 start_date = date(2018, 1, 29)
-end_date = date(2018, 2, 8)
+end_date = date(2018, 9, 3)
 '''
 start_date = date(2018, 2, 8)
 end_date = date(2018, 2, 25)
@@ -57,6 +75,7 @@ a_start=time.time()
 for single_date in daterange(start_date, end_date):
     today_date = single_date.strftime("%Y%m%d")  # date
     today_weekday = single_date.weekday()  # day of week
+    that_time_stamp=find_gtfs_time_stamp(today_date,single_date)
     if today_weekday < 5:
         service_id = 1
     elif today_weekday == 5:
@@ -64,9 +83,10 @@ for single_date in daterange(start_date, end_date):
     else:
         service_id = 3
 
+    db_transfer = db_GTFS[str(that_time_stamp)+"_transfers"]
+    db_seq=db_GTFS[str(that_time_stamp)+"_trip_seq"]
+    db_stops=db_GTFS[str(that_time_stamp)+"_stops"]
     db_today_collection = db_history[today_date]
-
-    db_tripupdate = db_feed[today_date]
 
     # data retrival
     # the scheduled transfers for today
@@ -82,14 +102,13 @@ for single_date in daterange(start_date, end_date):
     Max_count = len(db_schedule)
     Total_count = 0
 
-    records_count = 0
     records_collections = []
     Total_sum_count=len(db_schedule)
     for each_transfer in db_schedule:
         a = time.time()
-        print("----------------------------------------------")
         # old_sum=Normal_count+Missed_count+None_count
         Total_count += 1
+        
         if Max_count % 1000 == 0:
             print(round(Total_count / Max_count * 100, 4), "%")
 
@@ -118,10 +137,10 @@ for single_date in daterange(start_date, end_date):
         real_transfer["schd_diff"] = each_transfer["b_time"] - \
             each_transfer["a_time"]
 
-        db_real_b_trip = list(db_tripupdate.find(
+        db_real_b_trip = list(db_realtime_collection.find(
             {"trip_id": (b_trip_id)}))
 
-        db_real_a_trip = list(db_tripupdate.find(
+        db_real_a_trip = list(db_realtime_collection.find(
             {"trip_id": (a_trip_id)}))
         # print((today_date),(b_trip_id),db_real_b_trip)
 
@@ -132,20 +151,17 @@ for single_date in daterange(start_date, end_date):
             real_transfer["status"] = 5  # "RECORD_MISS"
             None_count += 1
             db_today_collection.insert_one(real_transfer)
-            print("M: ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "|", (Normal_count +
-                                                                                                                                                            Missed_count + Preemptive_count + Critical_count) / Total_count)
+            #print("M: ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "|", (Normal_count +
+            #                                                                                                                                                Missed_count + Preemptive_count + Critical_count) / Total_count)
             continue
 
         # Find the real_record in the feed data according to the tripid and stopid
         b_real_time = -1
-        b_trip_feeds = list(db_tripupdate.find(
-            {"trip_id": str(b_trip_id), "seq.stop": b_stop_id}))
+        b_trip_feeds = list(db_realtime_collection.find(
+            {"trip_id": str(b_trip_id), "stop_id": b_stop_id}))
 
         if len(b_trip_feeds) != 0:
-            for b_stop_time in b_trip_feeds[len(b_trip_feeds) - 1]["seq"]:
-                if b_stop_time["stop"] == b_stop_id:
-                    b_real_time = b_stop_time["arr"]
-                    break
+            b_real_time = b_trip_feeds[0]["time"]
 
         # If b_real_time=-1, then there are no such a stop detected in the feed.
         if b_real_time == -1:
@@ -153,25 +169,23 @@ for single_date in daterange(start_date, end_date):
             real_transfer["status"] = 4  # "STOP_MISS_B"
             None_count += 1
             db_today_collection.insert_one(real_transfer)
-            print("B: ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "|", (Normal_count +
-                                                                                                                                                            Missed_count + Preemptive_count + Critical_count) / Total_count)
+            #print("B: ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "|", (Normal_count +
+            #                                                                                                                                                Missed_count + Preemptive_count + Critical_count) / Total_count)
             continue
 
         a_real_time = -1
-        a_trip_feeds = list(db_tripupdate.find(
-            {"trip_id": str(a_trip_id), "seq.stop": a_stop_id}))
+        a_trip_feeds = list(db_realtime_collection.find(
+            {"trip_id": str(a_trip_id), "stop_id": a_stop_id}))
         if len(a_trip_feeds) != 0:
-            for a_stop_time in a_trip_feeds[len(a_trip_feeds) - 1]["seq"]:
-                if a_stop_time["stop"] == a_stop_id:
-                    a_real_time = a_stop_time["arr"]
-                    break
+            a_real_time = a_trip_feeds[0]["time"]
+                    
         if a_real_time == -1:
             real_transfer["diff"] = None
             real_transfer["status"] = 3  # "STOP_MISS_A"
             None_count += 1
             db_today_collection.insert_one(real_transfer)
-            print("A: ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "|", (Normal_count +
-                                                                                                                                                            Missed_count + Preemptive_count + Critical_count) / Total_count)
+            #print("A: ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "|", (Normal_count +
+            #                                                                                                                                                Missed_count + Preemptive_count + Critical_count) / Total_count)
             continue
         ##### Done: Omit the null value #####
 
@@ -254,17 +268,17 @@ for single_date in daterange(start_date, end_date):
         #print("status:",real_transfer["status"])
         #print("b_alt_time", b_alt_time, "b_time", real_transfer["b_t"], "b_real_time", b_real_time,
         #        "a_time", real_transfer["a_t"], "a_real_time", a_real_time, "w_time",real_transfer["w_t"],"b_alt_sequence_id", b_alt_sequence_id, "diff", b_real_time - a_real_time - real_transfer["w_t"],"alt_diff",b_alt_time - a_real_time - real_transfer["w_t"])
-        print("V: ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "||",
-              round((Normal_count + Missed_count + Preemptive_count + Critical_count) / Total_count,4),"||", round(Total_count/Total_sum_count,4)  ,"||",round(b - a,2),"||",round(b - a_start,2))
-        #print("B:",b_stop_id,b_trip_id,"A:",a_stop_id,a_trip_id)
+        if Total_count % 1000 ==50:
+            print(Total_count,": ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "||",
+                round((Normal_count + Missed_count + Preemptive_count + Critical_count) / Total_count,4),"||", round(Total_count/Total_sum_count,4)  ,"||",round(b - a,2),"||",round(b - a_start,2))
+            #print("B:",b_stop_id,b_trip_id,"A:",a_stop_id,a_trip_id)
 
 
-        if records_count % 10000 == 9999:
+        if Total_count % 10000 == 9999:
             ass = time.time()
             db_today_collection.insert_many(records_collections)
             records_collections = []
             bss = time.time()
             print("insert", bss - ass)
-        records_count = records_count + 1
 
     db_today_collection.insert_many(records_collections)
