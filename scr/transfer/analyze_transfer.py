@@ -45,9 +45,6 @@ def find_gtfs_time_stamp(today_date,single_date):
 '''start_date = date(2018, 1, 29)
 end_date = date(2018, 2, 25)'''
 
-start_date = date(2018, 1, 29)
-end_date = date(2018, 9, 3)
-
 db_history = client.cota_transfer
 
 # main loop
@@ -56,13 +53,6 @@ def analyze_transfer(single_date):
     today_date = single_date.strftime("%Y%m%d")  # date
     today_weekday = single_date.weekday()  # day of week
     that_time_stamp=find_gtfs_time_stamp(today_date,single_date)
-
-    if today_weekday < 5:
-        service_id = 1
-    elif today_weekday == 5:
-        service_id = 2
-    else:
-        service_id = 3
 
     db_today_collection = db_history[today_date]
     db_stops=db_GTFS[str(that_time_stamp)+"_stops"]
@@ -74,7 +64,6 @@ def analyze_transfer(single_date):
     #print(db_result)
     for single_result in db_result:
         a_stop_id=single_result['a_st']
-        b_stop_id=single_result['b_st']
         try:
             dic_stops[a_stop_id]
         except:
@@ -107,7 +96,7 @@ def analyze_transfer(single_date):
     w.save(location)
         
 if __name__ == '__main__':
-    start_date = date(2018, 1, 30)
+    start_date = date(2018, 7, 30)
     end_date = date(2018, 9, 3)
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores)

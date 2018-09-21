@@ -77,7 +77,6 @@ def paralleling_transfers(single_date):
 
     db_transfer = db_GTFS[str(that_time_stamp)+"_transfers"]
     db_seq=db_GTFS[str(that_time_stamp)+"_trip_seq"]
-    db_stops=db_GTFS[str(that_time_stamp)+"_stops"]
     db_today_collection = db_history[today_date]
 
     # data retrival
@@ -95,14 +94,10 @@ def paralleling_transfers(single_date):
     Total_count = 0
 
     records_collections = []
-    Total_sum_count=len(db_schedule)
     for each_transfer in db_schedule:
         a = time.time()
         # old_sum=Normal_count+Missed_count+None_count
         Total_count += 1
-        
-        if Max_count % 1000 == 0:
-            print(round(Total_count / Max_count * 100, 4), "%")
 
         b_trip_id = each_transfer["b_trip_id"]
         a_trip_id = each_transfer["a_trip_id"]
@@ -262,7 +257,7 @@ def paralleling_transfers(single_date):
         #        "a_time", real_transfer["a_t"], "a_real_time", a_real_time, "w_time",real_transfer["w_t"],"b_alt_sequence_id", b_alt_sequence_id, "diff", b_real_time - a_real_time - real_transfer["w_t"],"alt_diff",b_alt_time - a_real_time - real_transfer["w_t"])
         if Total_count % 1000 ==50:
             print("[",single_date,"]: ",Total_count,"||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "||",
-                round((Normal_count + Missed_count + Preemptive_count + Critical_count) / Total_count,4),"||", round(Total_count/Total_sum_count,4)  ,"||",round(b - a,2),"||",round(b - a_start,2))
+                round((Normal_count + Missed_count + Preemptive_count + Critical_count) / Total_count,4),"||", round(Total_count/Max_count,4)  ,"||",round(b - a,2),"||",round(b - a_start,2))
             #print("B:",b_stop_id,b_trip_id,"A:",a_stop_id,a_trip_id)
 
 
