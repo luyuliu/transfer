@@ -274,8 +274,8 @@ def paralleling_transfers(single_date):
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 8, 27)
-    end_date = date(2018, 8, 28)
+    start_date = date(2018, 5, 3)
+    end_date = date(2018, 8, 1)
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores)
     date_range = daterange(start_date, end_date)
