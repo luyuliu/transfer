@@ -9,7 +9,7 @@ from datetime import timedelta, date
 
 # database setup
 client = MongoClient('mongodb://localhost:27017/')
-db_GTFS = client.cota_gtfs_1
+db_GTFS = client.cota_gtfs
 
 
 db_feed = client.cota_tripupdate

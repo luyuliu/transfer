@@ -16,6 +16,8 @@ import time
 
 import multiprocessing
 
+
+
 # database setup
 client = MongoClient('mongodb://localhost:27017/')
 db_GTFS = client.cota_gtfs
@@ -42,6 +44,8 @@ def find_gtfs_time_stamp(today_date,single_date):
         backup=each_time_stamp
     return db_time_stamps[len(db_time_stamps)-1]
 
+
+
 def convertSeconds(BTimeString, single_date):
     time = BTimeString.split(":")
     hours = int(time[0])
@@ -57,14 +61,22 @@ def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
+
+start_date = date(2018, 1, 29)
+end_date = date(2018, 9, 3)
+'''
+start_date = date(2018, 2, 8)
+end_date = date(2018, 2, 25)
+'''
+
+
 def sortQuery(A):
     return A["seq"]
 
-
 a_start=time.time()
-
-
-def paralleling_transfers(single_date):
+# main loop
+# enumerate every day in the range
+for single_date in daterange(start_date, end_date):
     today_date = single_date.strftime("%Y%m%d")  # date
     today_weekday = single_date.weekday()  # day of week
     that_time_stamp=find_gtfs_time_stamp(today_date,single_date)
@@ -261,7 +273,7 @@ def paralleling_transfers(single_date):
         #print("b_alt_time", b_alt_time, "b_time", real_transfer["b_t"], "b_real_time", b_real_time,
         #        "a_time", real_transfer["a_t"], "a_real_time", a_real_time, "w_time",real_transfer["w_t"],"b_alt_sequence_id", b_alt_sequence_id, "diff", b_real_time - a_real_time - real_transfer["w_t"],"alt_diff",b_alt_time - a_real_time - real_transfer["w_t"])
         if Total_count % 1000 ==50:
-            print("[",single_date,"]: ",Total_count,"||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "||",
+            print(Total_count,": ", real_transfer["status"], "||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "||",
                 round((Normal_count + Missed_count + Preemptive_count + Critical_count) / Total_count,4),"||", round(Total_count/Total_sum_count,4)  ,"||",round(b - a,2),"||",round(b - a_start,2))
             #print("B:",b_stop_id,b_trip_id,"A:",a_stop_id,a_trip_id)
 
@@ -274,17 +286,3 @@ def paralleling_transfers(single_date):
             print("insert", bss - ass)
 
     db_today_collection.insert_many(records_collections)
-    return True
- 
-
-
-if __name__ == '__main__':
-    start_date = date(2018, 8, 27)
-    end_date = date(2018, 8, 28)
-    cores = multiprocessing.cpu_count()
-    pool = multiprocessing.Pool(processes=cores)
-    date_range = daterange(start_date, end_date)
-    output=[]
-    output=pool.map(paralleling_transfers, date_range)
-    pool.close()
-    pool.join()
