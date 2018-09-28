@@ -63,7 +63,6 @@ def sortQuery(A):
 
 a_start=time.time()
 
-
 def paralleling_transfers(single_date):
     today_date = single_date.strftime("%Y%m%d")  # date
     today_weekday = single_date.weekday()  # day of week
@@ -79,9 +78,24 @@ def paralleling_transfers(single_date):
     db_seq=db_GTFS[str(that_time_stamp)+"_trip_seq"]
     db_today_collection = db_history[today_date]
 
+    db_history_records=list(db_today_collection.find({}))
+
+    
+
     # data retrival
     # the scheduled transfers for today
     db_schedule = list(db_transfer.find({"b_service_id": str(service_id)}))
+
+    if len(db_history_records)==len(db_schedule):
+        print("[",single_date,"]: Done.")
+        return "Skip"
+    else: 
+        db_today_collection.drop()
+        print("[",single_date,"]: Drop.")
+
+
+
+
     db_realtime_collection=db_realtime["R"+today_date]
     print(today_date)
 
@@ -189,13 +203,26 @@ def paralleling_transfers(single_date):
         false_trips_list = list(db_seq.find({"service_id": str(
             service_id), "stop_id": b_stop_id, "route_id": real_transfer["b_ro"]}))
         # print(false_trips_list)
+
+        if len(false_trips_list)==0:
+            real_transfer["diff"] = None
+            real_transfer["status"] = 4  # "STOP_MISS_B"
+            None_count += 1
+            db_today_collection.insert_one(real_transfer)
+            continue
+
         false_trips_list.sort(key=sortQuery)
         # print(false_trips_list)
         seq_query = list(db_seq.find({"service_id": str(
-            service_id), "stop_id": b_stop_id, "trip_id": b_trip_id}))[0]
-        if seq_query == []:
+            service_id), "stop_id": b_stop_id, "trip_id": b_trip_id}))
+        if len(seq_query) == 0:
+            real_transfer["diff"] = None
+            real_transfer["status"] = 4  # "STOP_MISS_B"
+            None_count += 1
+            db_today_collection.insert_one(real_transfer)
             continue
-        flag_sequence_id = seq_query["seq"]
+        
+        flag_sequence_id = seq_query[0]["seq"]
 
         for each_trip in false_trips_list:
             i_trip_id = each_trip["trip_id"]
@@ -266,16 +293,17 @@ def paralleling_transfers(single_date):
             db_today_collection.insert_many(records_collections)
             records_collections = []
             bss = time.time()
-            print("insert", bss - ass)
+            print("Database Insert:",today_date,"||",Total_count)
 
     db_today_collection.insert_many(records_collections)
+    print("[",single_date,"]: Done.")
     return True
  
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 5, 3)
-    end_date = date(2018, 8, 1)
+    start_date = date(2018, 1, 29)
+    end_date = date(2018, 9, 2)
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores)
     date_range = daterange(start_date, end_date)
@@ -283,3 +311,12 @@ if __name__ == '__main__':
     output=pool.map(paralleling_transfers, date_range)
     pool.close()
     pool.join()
+
+    f=open("D:\\Luyu\\transfer_data\\archive\\"+str(time.time())+".txt","a")
+    i=0
+    for single_date in date_range:
+        f.write(str(output[i])+single_date.strftime("%Y%m%d"))
+    f.close()
+
+
+# May 06 not working.
