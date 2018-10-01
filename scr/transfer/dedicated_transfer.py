@@ -77,7 +77,7 @@ def paralleling_transfers(single_date):
         service_id = 2
     else:
         service_id = 3
-    db_dedicated_collection= client.db_dedicated[today_date]
+    db_dedicated_collection= client.cota_dedicated[today_date]
 
     # data retrival
     # the scheduled transfers for today
@@ -215,9 +215,8 @@ def paralleling_transfers(single_date):
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 8, 27)
-    end_date = date(2018, 8, 28)
-    '''
+    start_date = date(2018, 1, 29)
+    end_date = date(2018, 9, 3)
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores)
     date_range = daterange(start_date, end_date)
@@ -225,5 +224,3 @@ if __name__ == '__main__':
     output=pool.map(paralleling_transfers, date_range)
     pool.close()
     pool.join()
-'''
-    paralleling_transfers(start_date)

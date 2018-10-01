@@ -67,26 +67,14 @@ def analyze_transfer(single_date):
         try:
             dic_stops[a_stop_id]
         except:
-            dic_stops[a_stop_id]={}
-        else:
-            pass
-        
-        try:
-            dic_stops[a_stop_id][single_result["a_ro"]]
-        except:
             line={}
             a_stop=list(db_stops.find({"stop_id":a_stop_id}))
             if a_stop==[]:
                 continue
             else:
                 a_stop=a_stop[0]
-
-            
             line['lat']=a_stop['stop_lat']
             line['lon']=a_stop['stop_lon']
-            line['stop_id']=a_stop_id
-            line['route_id']=single_result["a_ro"]
-            line['total_TTP']=
             line['total_count'] = 0
             line['zero_count'] = 0
             line['one_count'] = 0
