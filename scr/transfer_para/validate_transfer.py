@@ -60,12 +60,32 @@ def daterange(start_date, end_date):
 def sortQuery(A):
     return A["seq"]
 
-def paralleling_transfers(each_transfer):
+def paralleling_transfers(args):
+
+    each_transfer=args[0] 
+    single_date=args[1]
+    that_time_stamp=args[2]
+    total_length=args[3]
+
     b_trip_id = each_transfer["b_trip_id"]
     a_trip_id = each_transfer["a_trip_id"]
     walking_time = each_transfer["w_time"]
     b_stop_id = each_transfer["b_stop_id"]
     a_stop_id = each_transfer["a_stop_id"]
+    
+    today_date = single_date.strftime("%Y%m%d")  # date
+    
+    today_weekday = single_date.weekday()  # day of week
+
+    if today_weekday < 5:
+        service_id = 1
+    elif today_weekday == 5:
+        service_id = 2
+    else:
+        service_id = 3
+
+    db_seq=db_GTFS[str(that_time_stamp)+"_trip_seq"]
+    db_today_collection = db_history[today_date]
 
     real_transfer = {}
     real_transfer["a_st"] = a_stop_id
@@ -85,6 +105,8 @@ def paralleling_transfers(each_transfer):
     real_transfer["w_t"] = walking_time
     real_transfer["schd_diff"] = each_transfer["b_time"] - \
         each_transfer["a_time"]
+
+    db_realtime_collection=db_realtime["R"+today_date]
 
     db_real_b_trip = list(db_realtime_collection.find(
         {"trip_id": (b_trip_id)}))
@@ -213,6 +235,11 @@ def paralleling_transfers(each_transfer):
     real_transfer["b_a_tr"] = b_alt_trip_id
 
     db_today_collection.insert_one(real_transfer)
+
+    this_time=int(time.time())
+    this_count=db_today_collection.count()
+    if this_time %10 ==9:
+        print("[",today_date,"] : ","Finishing: ",round(db_today_collection.count()/total_length,2),"%","Counting: ",this_count)
     return True
  
 
@@ -220,8 +247,8 @@ def paralleling_transfers(each_transfer):
 if __name__ == '__main__':
     start_date = date(2018, 1, 29)
     end_date = date(2018, 1, 31)
+
     for single_date in daterange(start_date, end_date):
-        
         today_date = single_date.strftime("%Y%m%d")  # date
         today_weekday = single_date.weekday()  # day of week
         that_time_stamp=find_gtfs_time_stamp(today_date,single_date)
@@ -233,14 +260,24 @@ if __name__ == '__main__':
             service_id = 3
 
         db_transfer = db_GTFS[str(that_time_stamp)+"_transfers"]
-        db_seq=db_GTFS[str(that_time_stamp)+"_trip_seq"]
         db_today_collection = db_history[today_date]
 
+        
         db_history_records=list(db_today_collection.find({}))
 
         # data retrival
         # the scheduled transfers for today
         db_schedule = list(db_transfer.find({"b_service_id": str(service_id)}))
+        total_length=len(db_schedule)
+
+        db_args=[]
+        for each_transfer in db_schedule:
+            each_line=[]
+            each_line.append(each_transfer)
+            each_line.append(single_date)
+            each_line.append(that_time_stamp)
+            each_line.append(total_length)
+            db_args.append(each_line)
 
         if len(db_history_records)==len(db_schedule):
             print("[",single_date,"]: Done.")
@@ -251,13 +288,12 @@ if __name__ == '__main__':
         cores = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(processes=cores)
         output=[]
-        output=pool.map(paralleling_transfers, db_schedule)
+        output=pool.map(paralleling_transfers, db_args)
         pool.close()
         pool.join()
 
 
 
-        db_realtime_collection=db_realtime["R"+today_date]
         print(today_date)
 
 # May 06 not working.
