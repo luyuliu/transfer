@@ -1,6 +1,7 @@
 import pymongo
 from datetime import timedelta, date
 import time
+import multiprocessing
 
 def convertSeconds(BTimeString):
     time = BTimeString.split(":")
@@ -53,7 +54,7 @@ end_date = date(2018, 9, 3)
 
 # main loop
 # enumerate every day in the range
-for single_date in daterange(start_date, end_date):
+def paralleling_finding(single_date):
     time_matrix={}
     start_time=time.time()
     today_date = single_date.strftime("%Y%m%d")  # date
@@ -111,3 +112,16 @@ for single_date in daterange(start_date, end_date):
     end_time=time.time()
     print(end_time-start_time)
     db_realtime_collection.create_index([("trip_id",1),("stop_id",1)])
+
+    
+if __name__ == '__main__':
+    start_date = date(2018, 1, 29)
+    end_date = date(2018, 1, 30)
+    date_range=daterange(start_date, end_date)
+    cores = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(processes=cores)
+    date_range = daterange(start_date, end_date)
+    output=[]
+    output=pool.map(paralleling_finding, date_range)
+    pool.close()
+    pool.join()
