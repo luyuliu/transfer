@@ -58,9 +58,10 @@ for single_date in daterange(start_date, end_date):
     start_time=time.time()
     today_date = single_date.strftime("%Y%m%d")  # date
     db_feed_collection=db_tripupdate[today_date]
-    print("-----------------------",today_date,"-----------------------")
+    
 
     that_time_stamp=find_gtfs_time_stamp(today_date,single_date)
+    print("-----------------------",today_date,": Start/ From",date.fromtimestamp(that_time_stamp)," -----------------------")
 
     # a=date.fromtimestamp(that_time_stamp)
     # print(a)
@@ -71,6 +72,9 @@ for single_date in daterange(start_date, end_date):
 
     db_realtime_collection=db_realtime["R"+today_date]
     db_feeds=list(db_feed_collection.find({}))
+    if db_feeds==[]:
+        print("-----------------------",today_date," : Skip -----------------------")
+        continue
     print("-----------------------","FindDone","-----------------------")
     total_count=len(db_feeds)
     count=0

@@ -59,7 +59,7 @@ def paralleling_finding(single_date):
     start_time=time.time()
     today_date = single_date.strftime("%Y%m%d")  # date
     db_feed_collection=db_tripupdate[today_date]
-    print("-----------------------",today_date,"-----------------------")
+    
 
     that_time_stamp=find_gtfs_time_stamp(today_date,single_date)
 
@@ -69,10 +69,11 @@ def paralleling_finding(single_date):
     db_stops=db_GTFS[str(that_time_stamp)+"_stops"]
     db_stop_times=db_GTFS[str(that_time_stamp)+"_stop_times"]
     db_trips=db_GTFS[str(that_time_stamp)+"_trips"]
+    print("-----------------------",today_date,": Start/ From",date.fromtimestamp(that_time_stamp)," -----------------------")
 
     db_realtime_collection=db_realtime["R"+today_date]
     db_feeds=list(db_feed_collection.find({}))
-    print("-----------------------","FindDone","-----------------------")
+    print("-----------------------",today_date,": FindDone","-----------------------")
     total_count=len(db_feeds)
     count=0
     for each_feed in db_feeds:
@@ -97,7 +98,7 @@ def paralleling_finding(single_date):
             seq_count+=1
         
         if count%10000==0:
-            print("-----------------------","QueryDoneBy:",count/total_count*100,"-----------------------")
+            print("-----------------------",today_date,": QueryDoneBy:",count/total_count*100,"-----------------------")
         count+=1
     
     for trip_id in time_matrix.keys():
@@ -116,10 +117,10 @@ def paralleling_finding(single_date):
     
 if __name__ == '__main__':
     start_date = date(2018, 1, 29)
-    end_date = date(2018, 1, 30)
+    end_date = date(2018, 9, 3)
     date_range=daterange(start_date, end_date)
     cores = multiprocessing.cpu_count()
-    pool = multiprocessing.Pool(processes=cores)
+    pool = multiprocessing.Pool(processes=10)
     date_range = daterange(start_date, end_date)
     output=[]
     output=pool.map(paralleling_finding, date_range)
