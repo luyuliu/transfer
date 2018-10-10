@@ -86,7 +86,7 @@ def analyze_transfer(single_date):
             line['lon']=a_stop['stop_lon']
             line['stop_id']=a_stop_id
             line['route_id']=single_result["a_ro"]
-            line['total_TTP']=
+            line['total_TTP']=0
             line['total_count'] = 0
             line['zero_count'] = 0
             line['one_count'] = 0

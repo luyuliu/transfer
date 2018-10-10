@@ -75,6 +75,7 @@ def analyze_transfer(single_date):
                 a_stop=a_stop[0]
             line['lat']=a_stop['stop_lat']
             line['lon']=a_stop['stop_lon']
+            line["total_TTP"]=0
             line['total_count'] = 0
             line['zero_count'] = 0
             line['one_count'] = 0
@@ -83,6 +84,11 @@ def analyze_transfer(single_date):
             dic_stops[a_stop_id]=line
         
         switch_status(single_result['status'],dic_stops[a_stop_id])
+        if single_result['status']<3:
+            single_TTP=single_result['b_a_t']-single_result['b_t']
+            print(single_TTP)
+            dic_stops[a_stop_id]["total_TTP"]+=single_TTP
+
 
     location='D:/Luyu/transfer_data/nor_shp/'+today_date
     print(location)
@@ -93,6 +99,7 @@ def analyze_transfer(single_date):
     w.field("one_count","N")
     w.field("two_count","N")
     w.field("miss_count","N")
+    w.field("total_TTP","N")
     for key, value in dic_stops.items():
         w.record(key,value['total_count'],value['zero_count'],value['one_count'],value['two_count'],value['miss_count'])
         w.point(float(value['lon']),float(value['lat']))
