@@ -77,7 +77,10 @@ def paralleling_transfers(single_date):
         service_id = 2
     else:
         service_id = 3
+
     db_dedicated_collection= client.cota_dedicated[today_date]
+
+    count_ded_col=db_dedicated_collection.count();
 
     # data retrival
     # the scheduled transfers for today
@@ -91,6 +94,15 @@ def paralleling_transfers(single_date):
     Preemptive_count = 0
     Critical_count = 0
     Max_count = len(db_validated_transfer)
+
+    if count_ded_col==Max_count:
+        print("[",single_date,"]: Done.")
+        return False;
+    else:
+        db_dedicated_collection.drop();
+        print("[",single_date,"]: Drop.")
+
+
     Total_count = 0
     Ded_count=0
     records_collections = []
@@ -199,28 +211,31 @@ def paralleling_transfers(single_date):
         Total_count += 1
         b=time.time()
         #if Total_count % 1000 ==50:
-        print("[",single_date,"]: ",Total_count,"||", Normal_count, "|", Missed_count, "|", Preemptive_count, "|", Critical_count, "|", None_count, "||",
-                round((Normal_count + Missed_count + Preemptive_count + Critical_count) / Total_count,4),"||", round(Total_count / Max_count * 100, 4), "%"  ,"||",Ded_count,"||",round(b - a_start,2))
-       
+        
         if Total_count % 10000 == 9999:
             ass = time.time()
             db_dedicated_collection.insert_many(records_collections)
             records_collections = []
             bss = time.time()
-            print("insert", bss - ass)
+            print("Insert", Total_count/Max_count)
 
     db_dedicated_collection.insert_many(records_collections)
+    print("Insert", Total_count/Max_count)
     return True
  
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 1, 29)
+    start_date = date(2018, 3, 20)
     end_date = date(2018, 9, 3)
+
+    '''
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores)
     date_range = daterange(start_date, end_date)
     output=[]
     output=pool.map(paralleling_transfers, date_range)
     pool.close()
-    pool.join()
+    pool.join()'''
+    for each_date in daterange(start_date, end_date):
+        paralleling_transfers(each_date)
