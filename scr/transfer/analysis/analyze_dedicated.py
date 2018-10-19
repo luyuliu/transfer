@@ -19,6 +19,8 @@ def switch_status(status, line):
         line['one_count'] += 1
     elif status == 2:
         line['two_count'] += 1
+    elif status == 6:
+        line['critical_count'] += 1
     else:
         line['miss_count'] += 1
 
@@ -77,18 +79,19 @@ def analyze_transfer(single_date):
         except:
             line = {}
             a_stop = list(db_stops.find({"stop_id": a_stop_id}))
-            if a_stop==[]:
+            if a_stop == []:
                 continue
             else:
-                a_stop=a_stop[0]
+                a_stop = a_stop[0]
             line['lat'] = a_stop['stop_lat']
             line['lon'] = a_stop['stop_lon']
-            line["total_TTP"]=0
+            line["total_TTP"] = 0
             line['total_count'] = 0
             line['zero_count'] = 0
             line['one_count'] = 0
             line['two_count'] = 0
             line['miss_count'] = 0
+            line['critical_count'] = 0
 
             dic_stops[a_stop_id] = line
 
@@ -107,10 +110,25 @@ def analyze_transfer(single_date):
     w.field("one_count", "N")
     w.field("two_count", "N")
     w.field("miss_count", "N")
+    w.field("critical_count", "N")
+
     w.field("total_TTP", "F")
+    w.field("ave_TTP", "F")
+    w.field("tran_risk", "F")
     for key, value in dic_stops.items():
+        if value['zero_count']+value['one_count']+value['two_count']==0:
+            continue
+        else:
+            ave_TTP=value['total_TTP']/(value['zero_count']+value['one_count']+value['two_count'])
+
+        if value['total_count']==0:
+            continue
+        else:
+            trans_risk=value['one_count']/value['total_count']
+
         w.record(key, value['total_count'], value['zero_count'],
-                 value['one_count'], value['two_count'], value['miss_count'], value['total_TTP'])
+                 value['one_count'], value['two_count'], value['miss_count'], value['critical_count'],value['total_TTP'], ave_TTP+3600,trans_risk*100)
+        
         w.point(float(value['lon']), float(value['lat']))
 
     w.save(location)
