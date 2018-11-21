@@ -63,5 +63,6 @@ The script will produce a database with each day's all scheduled transfer as col
 ### V. Analyze Transfer
 After finishing IV, run scr/transfer/analysis/analyze_transfer.py to analyze the transfers. The script will export a shapefile, including each stop's average time penalty, transfer risk, and transfers of different status's count.
 
-
+### VI. Dedicated Bus Lane Simulation
+After finishing IV, run scr/transfer/dedicated_transfer.py to simulate dedicated bus lane's impact. 
 
