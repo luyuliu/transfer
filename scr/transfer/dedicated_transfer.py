@@ -98,7 +98,7 @@ def paralleling_transfers(single_date):
     Preemptive_count = 0
     Critical_count = 0
     Max_count = len(db_validated_transfer)
-    special = False
+    special = True
 
     if count_ded_col == Max_count and special == False:
         print("[", single_date, "]: Done.")
@@ -122,7 +122,10 @@ def paralleling_transfers(single_date):
             single_result["nor_b_a_tr"] = single_result["b_a_tr"]
 
             reassess_flag = True
+
+            flag=0
             if single_result["a_ro"] == dedicated_route_id or single_result["a_ro"] == -dedicated_route_id:
+                flag="a"
                 single_result["a_r_t"] = single_result["a_t"] # The time revision
 
                 false_trips_list = list(db_seq.find({"service_id": str(
@@ -170,8 +173,10 @@ def paralleling_transfers(single_date):
                     b_a_tr = "-2"
 
             elif single_result["b_ro"] == dedicated_route_id or single_result["b_ro"] == -dedicated_route_id:
+                flag="b"
                 real_b_seq = list(db_seq.find({"service_id": str(service_id), "stop_id": single_result["b_st"], "route_id": single_result["b_ro"], "time": {
                                   "$gte": single_result["a_r_t"] + single_result["w_t"] - 18000 - int((single_date - date(1970, 1, 1)).total_seconds())}}).sort([("seq", 1)]))[0]
+                # print(real_b_seq)
                 b_a_t_real = real_b_seq["time"] + \
                     int((single_date - date(1970, 1, 1)).total_seconds()) + 18000
                 b_a_seq_real = real_b_seq["seq"]
@@ -192,6 +197,7 @@ def paralleling_transfers(single_date):
                 single_result["b_a_t"] = b_a_t
                 single_result["b_a_seq"] = b_a_seq
                 single_result["b_a_tr"] = b_a_tr
+                temp_status=single_result["status"]
                 if b_a_seq == None:  # Critical transfers
                     single_result["status"] = 6
                     Critical_count += 1
@@ -207,6 +213,9 @@ def paralleling_transfers(single_date):
                 else:
                     single_result["status"] = 5
                     None_count += 1
+
+                
+                # print(temp_status,"=>",single_result["status"],flag )
 
                 Ded_count += 1
             else:
