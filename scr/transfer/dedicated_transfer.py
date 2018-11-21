@@ -98,8 +98,9 @@ def paralleling_transfers(single_date):
     Preemptive_count = 0
     Critical_count = 0
     Max_count = len(db_validated_transfer)
+    special = False
 
-    if count_ded_col == Max_count:
+    if count_ded_col == Max_count and special == False:
         print("[", single_date, "]: Done.")
         return False
     else:
@@ -122,21 +123,20 @@ def paralleling_transfers(single_date):
 
             reassess_flag = True
             if single_result["a_ro"] == dedicated_route_id or single_result["a_ro"] == -dedicated_route_id:
-                single_result["a_r_t"] = single_result["a_t"]
+                single_result["a_r_t"] = single_result["a_t"] # The time revision
 
                 false_trips_list = list(db_seq.find({"service_id": str(
                     service_id), "stop_id": single_result["b_st"], "route_id": single_result["b_ro"]}))
-                # print(false_trips_list)
                 false_trips_list.sort(key=sortQuery)
-                # print(false_trips_list)
                 b_a_tr = "0"
                 b_a_seq = ""
                 b_a_t = 9999999999
 
                 seq_query = list(db_seq.find({"service_id": str(
-                    service_id), "stop_id": single_result["b_st"], "trip_id": single_result["b_st"]}))
+                    service_id), "stop_id": single_result["b_st"], "trip_id": single_result["b_tr"]}))
                 if seq_query == []:
                     b_a_t == -2
+                    # print(single_result["b_st"], single_result["b_st"])
                 else:
                     seq_query = seq_query[0]
                     flag_sequence_id = seq_query["seq"]
@@ -150,6 +150,7 @@ def paralleling_transfers(single_date):
                             {"stop_id": single_result["b_st"], "trip_id": str(i_trip_id)}))
                         if query_realtime == []:
                             pass
+                            # This is tricky
                         else:
                             i_real_time = query_realtime[0]["time"]
                             if b_a_t > i_real_time and i_real_time >= single_result["a_r_t"] + single_result["w_t"]:
@@ -159,6 +160,7 @@ def paralleling_transfers(single_date):
 
                 # This means there's no alternative trip for this receiving trip. So you are doomed.
                 if b_a_t == 9999999999:
+                    # print(single_result["b_st"],single_result["b_tr"])
                     b_a_t = -1  # there's no an alternative trip.
                     b_a_seq = None
                     b_a_tr = "-1"
@@ -254,5 +256,9 @@ if __name__ == '__main__':
     output=pool.map(paralleling_transfers, date_range)
     pool.close()
     pool.join()'''
+
+    paralleling_transfers(start_date)
+    '''
     for each_date in daterange(start_date, end_date):
         paralleling_transfers(each_date)
+'''

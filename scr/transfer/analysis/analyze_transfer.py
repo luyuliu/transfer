@@ -44,7 +44,7 @@ def find_gtfs_time_stamp(today_date, single_date):
         (single_date - date(1970, 1, 1)).total_seconds()) + 18000
     backup = db_time_stamps[0]
     for each_time_stamp in db_time_stamps:
-        if each_time_stamp - today_seconds > 86400:
+        if each_time_stamp - today_seconds > 76400:
             return backup
         backup = each_time_stamp
     return db_time_stamps[len(db_time_stamps) - 1]
@@ -63,6 +63,8 @@ def analyze_transfer(single_date):
     today_date = single_date.strftime("%Y%m%d")  # date
     today_weekday = single_date.weekday()  # day of week
     that_time_stamp = find_gtfs_time_stamp(today_date, single_date)
+
+    print(that_time_stamp)
 
     db_today_collection = db_history[today_date]
     db_stops = db_GTFS[str(that_time_stamp) + "_stops"]
@@ -100,9 +102,10 @@ def analyze_transfer(single_date):
             # print(single_TTP)
             dic_stops[a_stop_id]["total_TTP"] += single_TTP
 
-    location = 'D:/Luyu/transfer_data/nor_shp/' + today_date
-    print(location)
-    w = shapefile.Writer(shapeType=1)
+    # print(dic_stops)
+    location = 'D:/Luyu/transfer_data/nor_shp/' + today_date+"_nor.shp"
+    # print(location)
+    w = shapefile.Writer(location)
     w.field("stop_id", "C")
     w.field("total_count", "N")
     w.field("zero_count", "N")
@@ -129,11 +132,10 @@ def analyze_transfer(single_date):
                  value['one_count'], value['two_count'], value['miss_count'], value['critical_count'],value['total_TTP'], ave_TTP+3600,trans_risk*100)
         w.point(float(value['lon']), float(value['lat']))
 
-    w.save(location)
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 3, 22)
+    start_date = date(2018, 3, 20)
     end_date = date(2018, 9, 3)
     '''
     cores = multiprocessing.cpu_count()
