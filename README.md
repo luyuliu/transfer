@@ -27,6 +27,7 @@ For example, route 1 will go through stop "RIVHOSW". And there will be several d
 After finishing I, II, and III, run scr/transfer/validate_transfer.py to validate the transfers. The script will find the scheduled transfers' status, including actual receiving trip， status, tr Please read my paper to know more details.
 The script will produce a database with each day's all scheduled transfer as collection.
 
+#### Database key explanation:
 | Key        | Meaning           | Type  |   Detailed explanation   |
 | ------------- |:-------------:| :-----:|  -------------------------: |
 | id      | mongodb id | hexString | 
@@ -48,6 +49,16 @@ The script will produce a database with each day's all scheduled transfer as col
 | b_a_seq |  b_alternative_seq     |    Int32 | The sequence of actual receiving bus in the trip_seq collection |
 | b_a_tr |  b_alternative_trip_id      |    Int32 | The trip_id of actual receiving bus |
 
+#### Status explanation:
+| Status        | Meaning           |
+| ------------- |:-------------:|
+| 0      | normal transfer (N=0) | 
+| 1      | missed transfer (N>0) | 
+| 2      | preemptive transfer (N<0) | 
+| 3      | No stop detected in the feed for the generating trip (missing_a) | 
+| 4      | No stop detected in the feed for the receiving trip (missing_b) | 
+| 5      | missing_real_time records | 
+| 6      | critical transfers (no possible receiving trip found) | 
 
 ### V. Analyze Transfer
 After finishing IV, run scr/transfer/analysis/analyze_transfer.py to analyze the transfers. The script will export a shapefile, including each stop's average time penalty, transfer risk, and transfers of different status's count.
