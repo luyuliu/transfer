@@ -1,3 +1,10 @@
+'''
+This script will find the real-time arrival/departure time from the GTFS
+real-time feed. 
+'''
+
+
+
 import pymongo
 from datetime import timedelta, date
 import time
@@ -36,7 +43,7 @@ def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
-def find_gtfs_time_stamp(today_date,single_date):
+def find_gtfs_time_stamp(today_date,single_date): # Find the corresponding GTFS set.
     today_seconds=int((single_date - date(1970, 1, 1)).total_seconds()) + 18000
     backup=db_time_stamps[0]
     for each_time_stamp in db_time_stamps:
@@ -54,13 +61,14 @@ end_date = date(2018, 9, 3)
 # main loop
 # enumerate every day in the range
 for single_date in daterange(start_date, end_date):
-    time_matrix={}
+    time_matrix={} # A dictionary: 1st layer: trip_id (each trip has a sequence of stops)
+                                #  2nd layer: stop_id (each stop in the sequence)
     start_time=time.time()
     today_date = single_date.strftime("%Y%m%d")  # date
-    db_feed_collection=db_tripupdate[today_date]
+    db_feed_collection=db_tripupdate[today_date] # The GTFS feed collection which has been divided by each day.
     
 
-    that_time_stamp=find_gtfs_time_stamp(today_date,single_date)
+    that_time_stamp=find_gtfs_time_stamp(today_date,single_date) # Find the corresponding GTFS set.
     print("-----------------------",today_date,": Start/ From",date.fromtimestamp(that_time_stamp)," -----------------------")
 
     # a=date.fromtimestamp(that_time_stamp)
@@ -70,32 +78,41 @@ for single_date in daterange(start_date, end_date):
     db_stop_times=db_GTFS[str(that_time_stamp)+"_stop_times"]
     db_trips=db_GTFS[str(that_time_stamp)+"_trips"]
 
-    db_realtime_collection=db_realtime["R"+today_date]
-    db_feeds=list(db_feed_collection.find({}))
-    if db_feeds==[]:
+    db_realtime_collection=db_realtime["R"+today_date] # Collection to be added.
+    db_feeds=list(db_feed_collection.find({})) # The GTFS feed collection which has been divided by each day.
+    if db_feeds==[]: # There is no feed this day, which shouldn't happen.
         print("-----------------------",today_date," : Skip -----------------------")
         continue
     print("-----------------------","FindDone","-----------------------")
-    total_count=len(db_feeds)
+    total_count=len(db_feeds) # Total length of this day's feed.
+
     count=0
-    for each_feed in db_feeds:
-        trip_id=each_feed["trip_id"]
-        seq_count=0
-        for each_stop in each_feed["seq"]:
-            stop_id=each_stop["stop"]
+    for each_feed in db_feeds: # For each feed record.
+        trip_id=each_feed["trip_id"] # trip_id
+        seq_count=0 # Sequence's count. It records the sequence id of different records of the same trip at different time.
+        # For example, if a bus/trip run on a route, the system will send back several different GTFS real-time reports at each time. 
+
+        # We always assume the lastest record is the most accurate one. So, we have to store the seq_count to compare the current one and the new one
+        # to determine whether we should update the records.
+
+        # We will select the smallest count. This is because with the bus running, the seq in its GTFS real-time will become shorter. If there's a smaller count 
+        # then it means that the current record is after the best record we record before.
+
+        for each_stop in each_feed["seq"]: # The sequence of each feed record.
+            stop_id=each_stop["stop"] # stop_id of each sequential stop.
             try:
-                time_matrix[trip_id]
+                time_matrix[trip_id] # Create time_matrix's first layer: trip_id. Each trip should has a unique records in the first layer.
             except:
                 time_matrix[trip_id]={}
             else:
                 pass
             try:
                 time_matrix[trip_id][stop_id]
-            except:
+            except: # if the stop is not recorded, then create it and add it to the trip_id.
                 time_matrix[trip_id][stop_id]={}
                 time_matrix[trip_id][stop_id]={"seq":seq_count,"time":each_stop["arr"]}
             else:
-                if time_matrix[trip_id][stop_id]["seq"]>seq_count:
+                if time_matrix[trip_id][stop_id]["seq"]>seq_count: # If the current seq_count is less, then update the records with the newest feed.
                     time_matrix[trip_id][stop_id]={"seq":seq_count,"time":each_stop["arr"]}
             seq_count+=1
         
@@ -103,12 +120,12 @@ for single_date in daterange(start_date, end_date):
             print("-----------------------","QueryDoneBy:",count/total_count*100,"-----------------------")
         count+=1
     
-    for trip_id in time_matrix.keys():
+    for trip_id in time_matrix.keys(): # trip_id
         for stop_id in time_matrix[trip_id].keys():
             recordss={}
             recordss["trip_id"]=trip_id
             recordss["stop_id"]=stop_id
-            recordss["seq"]=time_matrix[trip_id][stop_id]["seq"]
+            recordss["seq"]=time_matrix[trip_id][stop_id]["seq"] # This seq is different from the seq in the trip_seq.
             recordss["time"]=time_matrix[trip_id][stop_id]["time"]
             db_realtime_collection.insert_one(recordss)
     print("-----------------------","InsertDone:","-----------------------")

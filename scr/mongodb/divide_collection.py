@@ -1,3 +1,8 @@
+'''
+This script will divide the whole GTFS database into several individual GTFS real-time 
+trip-update database and add index.
+'''
+
 import pymongo
 from datetime import timedelta, date
 import time
