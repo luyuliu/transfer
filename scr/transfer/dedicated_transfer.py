@@ -51,7 +51,7 @@ def convertSeconds(BTimeString, single_date):
     minutes = int(time[1])
     seconds = int(time[2])
     return hours * 3600 + minutes * 60 + seconds + int((single_date - date(1970, 1, 1)).total_seconds()) + \
-        18000 # +18000 is the time zone.
+        18000  # +18000 is the time zone.
 
 # date setup
 
@@ -84,11 +84,13 @@ def paralleling_transfers(single_date):
 
     db_dedicated_collection = client.cota_dedicated[today_date]
 
-    count_ded_col = db_dedicated_collection.count() # The count of current dedicated collection
+    # The count of current dedicated collection
+    count_ded_col = db_dedicated_collection.count()
 
     # data retrival
     # the scheduled transfers for today
-    db_validated_transfer = list(db_today_collection.find({})) # today's transfer
+    db_validated_transfer = list(
+        db_today_collection.find({}))  # today's transfer
     db_realtime_collection = db_realtime["R" + today_date]
     print(today_date)
 
@@ -98,7 +100,8 @@ def paralleling_transfers(single_date):
     Preemptive_count = 0
     Critical_count = 0
     Max_count = len(db_validated_transfer)
-    toSkip = False # True to always wipe out when starting unless the count is exactly the same. False to switch to default.
+    # True to always wipe out when starting unless the count is exactly the same. False to switch to default.
+    toSkip = False
 
     if count_ded_col == Max_count and toSkip == True:
         print("[", single_date, "]: Done.")
@@ -116,49 +119,63 @@ def paralleling_transfers(single_date):
     for single_result in db_validated_transfer:
         a = time.time()
 
-        if single_result["status"] < 3 or single_result["status"] == 6: # If the status is normal/missed/preemptive, consider change it.
+        # If the status is normal/missed/preemptive, consider change it.
+        if single_result["status"] < 3 or single_result["status"] == 6:
             single_result["nor_b_a_t"] = single_result["b_a_t"]
             single_result["nor_b_a_seq"] = single_result["b_a_seq"]
             single_result["nor_b_a_tr"] = single_result["b_a_tr"]
 
-            reassess_flag = True # reassess_flag to true, which means the revisit of transfers will change this specific transfer.
+            # reassess_flag to true, which means the revisit of transfers will change this specific transfer.
+            reassess_flag = True
 
-            flag=0
-            if single_result["a_ro"] == dedicated_route_id or single_result["a_ro"] == -dedicated_route_id: # If the generating trip is the dedicated bus route.
-                flag="a"
-                single_result["a_r_t"] = single_result["a_t"] # Revise a_real_time to a_time, which change the actual time to schedule time
+            flag = 0
+            # If the generating trip is the dedicated bus route.
+            if single_result["a_ro"] == dedicated_route_id or single_result["a_ro"] == -dedicated_route_id:
+                flag = "a"
+                # Revise a_real_time to a_time, which change the actual time to schedule time
+                print(single_result["a_r_t"]-single_result["a_t"])
+                single_result["a_r_t"] = single_result["a_t"]
 
                 false_trips_list = list(db_seq.find({"service_id": str(
-                    service_id), "stop_id": single_result["b_st"], "route_id": single_result["b_ro"]})) # Find all possible receiving bus according to the b_stop_id and b_route_id and service_id
-                false_trips_list.sort(key=sortQuery) # Sort the query results according to the seq. This is a full list of possible trips.
-                b_a_tr = "0" # b_alternative_trip_id
-                b_a_seq = "" # b_alternative_seq_id
-                b_a_t = 9999999999 # b_alternative_time
+                    service_id), "stop_id": single_result["b_st"], "route_id": single_result["b_ro"]}))  # Find all possible receiving bus according to the b_stop_id and b_route_id and service_id
+                # Sort the query results according to the seq. This is a full list of possible trips.
+                false_trips_list.sort(key=sortQuery)
+                b_a_tr = "0"  # b_alternative_trip_id
+                b_a_seq = ""  # b_alternative_seq_id = ATP's N
+                b_a_real_seq = 0
+                b_a_t = 9999999999  # b_alternative_time
                 # These three are the information of the actual receiving bus.
 
                 seq_query = list(db_seq.find({"service_id": str(
-                    service_id), "stop_id": single_result["b_st"], "trip_id": single_result["b_tr"]})) # To find the scheduled receiving bus's seq_id, query the b_trip_id in the trip_seq collection.
-                if seq_query == []: # If there is no such a records, the scheduled receiving bus is not in the trip_seq, which is theoretical impossible.
+                    service_id), "stop_id": single_result["b_st"], "trip_id": single_result["b_tr"]}))  # To find the scheduled receiving bus's seq_id, query the b_trip_id in the trip_seq collection.
+                if seq_query == []:  # If there is no such a records, the scheduled receiving bus is not in the trip_seq, which is theoretical impossible.
                     b_a_t == -2
-                    
+
                 else:
+                    # Select the first one in the seq_query (which can only have one.)
                     seq_query = seq_query[0]
+                    # This is the seq_id of the scheduled receiving bus.
                     flag_sequence_id = seq_query["seq"]
 
+                    # For all the possible receiving buses, find the closest one as the actual receiving bus.
                     for each_trip in false_trips_list:
                         i_trip_id = each_trip["trip_id"]
                         seq_id = each_trip["seq"]
                         # Find the b_alt_time for this trip_id and compare it to the b_alt_time (overall). Until we find the smallest one.
                         # print(b_stop_id,str(i_trip_id))
                         query_realtime = list(db_realtime_collection.find(
-                            {"stop_id": single_result["b_st"], "trip_id": str(i_trip_id)}))
-                        if query_realtime == []:
+                            {"stop_id": single_result["b_st"], "trip_id": str(i_trip_id)}))  # Find each trip's real arrival time.
+                        if query_realtime == []:  # Cannot find the real time.
+                            # Which suggests that the bus is gone. We won't take care of it but to let it go till we find an existing bus.
                             pass
                             # This is tricky
                         else:
                             i_real_time = query_realtime[0]["time"]
                             if b_a_t > i_real_time and i_real_time >= single_result["a_r_t"] + single_result["w_t"]:
                                 b_a_t = i_real_time
+
+                                # store the closest trip's seq_id.
+                                b_a_real_seq = seq_id
                                 b_a_seq = seq_id - flag_sequence_id
                                 b_a_tr = i_trip_id
 
@@ -173,8 +190,13 @@ def paralleling_transfers(single_date):
                     b_a_seq = "Missed"
                     b_a_tr = "-2"
 
+                #print(single_result["b_st"], single_result["a_ro"], "=>", single_result["b_ro"], "|| ", single_result["a_r_t"]-,  b_a_t,
+                #      "ded: ", b_a_real_seq, "schedule: ", flag_sequence_id, "nor: ", single_result["nor_b_a_seq"]+flag_sequence_id)
+
+            # Dedicated bus lane is the receiving bus.
             elif single_result["b_ro"] == dedicated_route_id or single_result["b_ro"] == -dedicated_route_id:
-                flag="b"
+                # Which means we need to query from the GTFS static data.
+                flag = "b"
                 real_b_seq = list(db_seq.find({"service_id": str(service_id), "stop_id": single_result["b_st"], "route_id": single_result["b_ro"], "time": {
                                   "$gte": single_result["a_r_t"] + single_result["w_t"] - 18000 - int((single_date - date(1970, 1, 1)).total_seconds())}}).sort([("seq", 1)]))[0]
                 # print(real_b_seq)
@@ -192,13 +214,14 @@ def paralleling_transfers(single_date):
                 b_a_seq = b_a_seq_real - b_a_seq_schedule
                 b_a_tr = b_a_tr_real
             else:
-                reassess_flag = False # If not assessed, then reassess_flag is False.
+                # If not assessed, then reassess_flag is False.
+                reassess_flag = False
 
             if reassess_flag == True:
                 single_result["b_a_t"] = b_a_t
                 single_result["b_a_seq"] = b_a_seq
                 single_result["b_a_tr"] = b_a_tr
-                temp_status=single_result["status"]
+                temp_status = single_result["status"]
                 if b_a_seq == None:  # Critical transfers
                     single_result["status"] = 6
                     Critical_count += 1
@@ -215,7 +238,6 @@ def paralleling_transfers(single_date):
                     single_result["status"] = 5
                     None_count += 1
 
-                
                 # print(temp_status,"=>",single_result["status"],flag )
 
                 Ded_count += 1
