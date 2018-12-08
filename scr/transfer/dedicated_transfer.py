@@ -133,7 +133,9 @@ def paralleling_transfers(single_date):
             if single_result["a_ro"] == dedicated_route_id or single_result["a_ro"] == -dedicated_route_id:
                 flag = "a"
                 # Revise a_real_time to a_time, which change the actual time to schedule time
-                print(single_result["a_r_t"]-single_result["a_t"])
+
+                # print(single_result["a_r_t"]-single_result["a_t"])
+
                 single_result["a_r_t"] = single_result["a_t"]
 
                 false_trips_list = list(db_seq.find({"service_id": str(
@@ -198,21 +200,25 @@ def paralleling_transfers(single_date):
                 # Which means we need to query from the GTFS static data.
                 flag = "b"
                 real_b_seq = list(db_seq.find({"service_id": str(service_id), "stop_id": single_result["b_st"], "route_id": single_result["b_ro"], "time": {
-                                  "$gte": single_result["a_r_t"] + single_result["w_t"] - 18000 - int((single_date - date(1970, 1, 1)).total_seconds())}}).sort([("seq", 1)]))[0]
-                # print(real_b_seq)
-                b_a_t_real = real_b_seq["time"] + \
-                    int((single_date - date(1970, 1, 1)).total_seconds()) + 18000
-                b_a_seq_real = real_b_seq["seq"]
-                b_a_tr_real = real_b_seq["trip_id"]
+                                  "$gte": single_result["a_r_t"] + single_result["w_t"] - 18000 - int((single_date - date(1970, 1, 1)).total_seconds())}}).sort([("seq", 1)]))
+                if real_b_seq==[]: # There is no possible 
+                    
+                else:
+                    real_b_seq=real_b_seq[0]
+                    # print(real_b_seq)
+                    b_a_t_real = real_b_seq["time"] + \
+                        int((single_date - date(1970, 1, 1)).total_seconds()) + 18000
+                    b_a_seq_real = real_b_seq["seq"]
+                    b_a_tr_real = real_b_seq["trip_id"]
 
-                schedule_b_seq = list(db_seq.find({"service_id": str(
-                    service_id), "stop_id": single_result["b_st"], "trip_id": single_result["b_tr"]}))[0]
+                    schedule_b_seq = list(db_seq.find({"service_id": str(
+                        service_id), "stop_id": single_result["b_st"], "trip_id": single_result["b_tr"]}))[0]
 
-                b_a_seq_schedule = schedule_b_seq["seq"]
+                    b_a_seq_schedule = schedule_b_seq["seq"]
 
-                b_a_t = b_a_t_real
-                b_a_seq = b_a_seq_real - b_a_seq_schedule
-                b_a_tr = b_a_tr_real
+                    b_a_t = b_a_t_real
+                    b_a_seq = b_a_seq_real - b_a_seq_schedule
+                    b_a_tr = b_a_tr_real
             else:
                 # If not assessed, then reassess_flag is False.
                 reassess_flag = False
@@ -277,8 +283,8 @@ def paralleling_transfers(single_date):
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 3, 20)
-    end_date = date(2018, 9, 3)
+    start_date = date(2018, 1, 29)
+    end_date = date(2018, 3, 20)
 
     '''
     cores = multiprocessing.cpu_count()

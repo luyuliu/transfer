@@ -69,6 +69,7 @@ def analyze_transfer(single_date):
 
     db_result = list(db_today_collection.find({}))
 
+    print(db_result)
     dic_stops = {}
 
     # print(db_result)
@@ -101,8 +102,8 @@ def analyze_transfer(single_date):
             # print(single_TTP)
             dic_stops[a_stop_id]["total_TTP"] += single_TTP
 
-    location = 'D:/Luyu/transfer_data/ded_shp/' + today_date+'_ded'
-    print(location)
+    location = 'D:/Luyu/transfer_data/ded_shp/' + today_date+'_ded.shp'
+    # print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
     w.field("total_count", "N")
@@ -133,7 +134,7 @@ def analyze_transfer(single_date):
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 3, 20)
+    start_date = date(2018, 3, 1)
     end_date = date(2018, 9, 3)
     '''
     cores = multiprocessing.cpu_count()

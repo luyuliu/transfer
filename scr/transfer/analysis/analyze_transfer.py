@@ -129,13 +129,13 @@ def analyze_transfer(single_date):
             trans_risk=value['one_count']/value['total_count']
 
         w.record(key, value['total_count'], value['zero_count'],
-                 value['one_count'], value['two_count'], value['miss_count'], value['critical_count'],value['total_TTP'], ave_TTP+3600,trans_risk*100)
+                 value['one_count'], value['two_count'], value['miss_count'], value['critical_count'],value['total_TTP'], ave_TTP,trans_risk*100)
         w.point(float(value['lon']), float(value['lat']))
 
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 3, 20)
+    start_date = date(2018, 3, 1)
     end_date = date(2018, 9, 3)
     '''
     cores = multiprocessing.cpu_count()
