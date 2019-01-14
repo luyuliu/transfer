@@ -135,7 +135,7 @@ def analyze_transfer(single_date):
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 3, 1)
+    start_date = date(2018, 1, 29)
     end_date = date(2018, 9, 3)
     '''
     cores = multiprocessing.cpu_count()

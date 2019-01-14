@@ -134,8 +134,6 @@ def paralleling_transfers(single_date):
                 flag = "a"
                 # Revise a_real_time to a_time, which change the actual time to schedule time
 
-                # print(single_result["a_r_t"]-single_result["a_t"])
-
                 single_result["a_r_t"] = single_result["a_t"]
 
                 false_trips_list = list(db_seq.find({"service_id": str(
@@ -195,14 +193,14 @@ def paralleling_transfers(single_date):
                 #print(single_result["b_st"], single_result["a_ro"], "=>", single_result["b_ro"], "|| ", single_result["a_r_t"]-,  b_a_t,
                 #      "ded: ", b_a_real_seq, "schedule: ", flag_sequence_id, "nor: ", single_result["nor_b_a_seq"]+flag_sequence_id)
 
-            # Dedicated bus lane is the receiving bus.
+            # If the receiving trip is the dedicated bus route.
             elif single_result["b_ro"] == dedicated_route_id or single_result["b_ro"] == -dedicated_route_id:
                 # Which means we need to query from the GTFS static data.
                 flag = "b"
                 real_b_seq = list(db_seq.find({"service_id": str(service_id), "stop_id": single_result["b_st"], "route_id": single_result["b_ro"], "time": {
                                   "$gte": single_result["a_r_t"] + single_result["w_t"] - 18000 - int((single_date - date(1970, 1, 1)).total_seconds())}}).sort([("seq", 1)]))
                 if real_b_seq==[]: # There is no possible 
-                    
+                    print("???")
                 else:
                     real_b_seq=real_b_seq[0]
                     # print(real_b_seq)
@@ -219,8 +217,9 @@ def paralleling_transfers(single_date):
                     b_a_t = b_a_t_real
                     b_a_seq = b_a_seq_real - b_a_seq_schedule
                     b_a_tr = b_a_tr_real
+            
+            # If not assessed, then reassess_flag is False.
             else:
-                # If not assessed, then reassess_flag is False.
                 reassess_flag = False
 
             if reassess_flag == True:
@@ -241,6 +240,7 @@ def paralleling_transfers(single_date):
                     single_result["status"] = 2
                     Preemptive_count += 1
                 else:
+                    print(single_result)
                     single_result["status"] = 5
                     None_count += 1
 
@@ -257,7 +257,6 @@ def paralleling_transfers(single_date):
                 elif single_result["status"] == 2:
                     Preemptive_count += 1
                 else:
-                    single_result["status"] = 5
                     None_count += 1
         else:
             None_count += 1
