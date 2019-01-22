@@ -101,7 +101,7 @@ def paralleling_transfers(single_date):
     Critical_count = 0
     Max_count = len(db_validated_transfer)
     # True to always wipe out when starting unless the count is exactly the same. False to switch to default.
-    toSkip = False
+    toSkip = True
 
     if count_ded_col == Max_count and toSkip == True:
         print("[", single_date, "]: Done.")
@@ -294,8 +294,8 @@ if __name__ == '__main__':
     pool.close()
     pool.join()'''
 
-    paralleling_transfers(start_date)
-    '''
+    #paralleling_transfers(start_date)
+    
     for each_date in daterange(start_date, end_date):
         paralleling_transfers(each_date)
-'''
+
