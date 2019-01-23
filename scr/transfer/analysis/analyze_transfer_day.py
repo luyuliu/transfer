@@ -14,17 +14,16 @@ def daterange(start_date, end_date):
 
 def switch_status(status, line, hour):
     if status == 0:
-        line['zero_c' + str(hour)] += 1
+        line['zero_c_' + str(hour)] += 1
     elif status == 1:
-        line['one_c'+ str(hour)] += 1
+        line['one_c_' + str(hour)] += 1
     elif status == 2:
-        line['two_c'+ str(hour)] += 1
+        line['two_c_' + str(hour)] += 1
     elif status == 6:
-        line['crit_c'+ str(hour)] += 1
+        line['crit_c_' + str(hour)] += 1
     else:
-        line['miss_c'+ str(hour)] += 1
-
-    line['total_c'+ str(hour)] += 1
+        line['miss_c_' + str(hour)] += 1
+    line['totl_c_' + str(hour)] += 1
 
 
 db_time_stamps_set = set()
@@ -71,13 +70,17 @@ def analyze_transfer(single_date):
     db_stops = db_GTFS[str(that_time_stamp) + "_stops"]
 
     db_result_collection = []
-    db_result = list(db_today_collection.find({"b_a_t":{"$lte": today_first_seconds+21600}}))
+    db_result = list(db_today_collection.find(
+        {"b_a_t": {"$lte": today_first_seconds + 21600}}))
     db_result_collection.append(db_result)
-    db_result = list(db_today_collection.find({"b_a_t":{"$gt": today_first_seconds+21600,"$lte": today_first_seconds+43200}}))
+    db_result = list(db_today_collection.find(
+        {"b_a_t": {"$gt": today_first_seconds + 21600, "$lte": today_first_seconds + 43200}}))
     db_result_collection.append(db_result)
-    db_result = list(db_today_collection.find({"b_a_t":{"$gt": today_first_seconds+43200,"$lte": today_first_seconds+64800}}))
+    db_result = list(db_today_collection.find(
+        {"b_a_t": {"$gt": today_first_seconds + 43200, "$lte": today_first_seconds + 64800}}))
     db_result_collection.append(db_result)
-    db_result = list(db_today_collection.find({"b_a_t":{"$gt": today_first_seconds+64800}}))
+    db_result = list(db_today_collection.find(
+        {"b_a_t": {"$gt": today_first_seconds + 64800}}))
     db_result_collection.append(db_result)
 
     # b_a_t is the time we use to decide whether the transfer's category
@@ -85,7 +88,8 @@ def analyze_transfer(single_date):
     dic_stops = {}
 
     # print(db_result)
-    for hour in db_result_collection:
+    for hour in range(4):
+        print(len(db_result_collection[hour]))
         for single_result in db_result_collection[hour]:
             a_stop_id = single_result['a_st']
             try:
@@ -99,55 +103,73 @@ def analyze_transfer(single_date):
                     a_stop = a_stop[0]
                 line['lat'] = a_stop['stop_lat']
                 line['lon'] = a_stop['stop_lon']
-
-                line["total_TTP"] = 0
-                line['total_c'] = 0
-                line['zero_c'] = 0
-                line['one_c'] = 0
-                line['two_c'] = 0
-                line['miss_c'] = 0
-                line['crit_c'] = 0
                 dic_stops[a_stop_id] = line
+
+            try:
+                dic_stops[a_stop_id]["totl_TTP_" + str(hour)]
+            except:
+                dic_stops[a_stop_id]["totl_TTP_" + str(hour)] = 0
+                dic_stops[a_stop_id]['totl_c_' + str(hour)] = 0
+                dic_stops[a_stop_id]['zero_c_' + str(hour)] = 0
+                dic_stops[a_stop_id]['one_c_' + str(hour)] = 0
+                dic_stops[a_stop_id]['two_c_' + str(hour)] = 0
+                dic_stops[a_stop_id]['miss_c_' + str(hour)] = 0
+                dic_stops[a_stop_id]['crit_c_' + str(hour)] = 0
 
             switch_status(single_result['status'], dic_stops[a_stop_id], hour)
             if single_result['status'] < 3:
                 single_TTP = single_result['b_a_t'] - single_result['b_t']
                 # print(single_TTP)
-                dic_stops[a_stop_id]["total_TTP"] += single_TTP
+                dic_stops[a_stop_id]["totl_TTP_" + str(hour)] += single_TTP
 
     # print(dic_stops)
-    location = 'D:/Luyu/transfer_data/hour_shp/' + today_date+"_nor.shp"
+    location = 'D:/Luyu/transfer_data/hour_shp/' + today_date + "_nor.shp"
     # print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
 
     for hour in range(4):
-        w.field("total_c_"+str(hour), "N")
+        w.field("totl_c_" + str(hour), "N")
+        '''
         w.field("zero_c_"+str(hour), "N")
         w.field("one_c_"+str(hour), "N")
         w.field("two_c_"+str(hour), "N")
         w.field("miss_c_"+str(hour), "N")
-        w.field("crit_c_"+str(hour), "N")
+        w.field("crit_c_"+str(hour), "N")'''
 
-        w.field("total_TTP"+str(hour), "F")
-        w.field("ave_TTP"+str(hour), "F")
-        w.field("tran_risk"+str(hour), "F")
+        w.field("totl_TTP_" + str(hour), "F")
+        w.field("ave_TTP_" + str(hour), "F")
+        w.field("tran_rsk_" + str(hour), "F")
 
     for key, value in dic_stops.items():
-        if value['zero_count']+value['one_count']+value['two_count']==0:
-            continue
-        else:
-            ave_TTP=value['total_TTP']/(value['zero_count']+value['one_count']+value['two_count'])
+        ave_TTP = []
+        trans_risk = []
+        for hour in range(4):
 
-        if value['total_count']==0:
-            continue
-        else:
-            trans_risk=value['one_count']/value['total_count']
+            try:
+                value["totl_TTP_" + str(hour)]
+            except:
+                value["totl_TTP_" + str(hour)] = 0
+                value['totl_c_' + str(hour)] = 0
+                value['zero_c_' + str(hour)] = 0
+                value['one_c_' + str(hour)] = 0
+                value['two_c_' + str(hour)] = 0
+                value['miss_c_' + str(hour)] = 0
+                value['crit_c_' + str(hour)] = 0
 
-        w.record(key, value['total_count'], value['zero_count'],
-                 value['one_count'], value['two_count'], value['miss_count'], value['critical_count'],value['total_TTP'], ave_TTP,trans_risk*100)
+            if value['zero_c_' + str(hour)] + value['one_c_' + str(hour)] + value['two_c_' + str(hour)] == 0:
+                ave_TTP.append(None)
+            else:
+                ave_TTP.append(value['totl_TTP_' + str(hour)] / (value['zero_c_' + str(
+                    hour)] + value['one_c_' + str(hour)] + value['two_c_' + str(hour)]))
+
+            if value['totl_c_'+str(hour)] == 0:
+                trans_risk.append(None)
+            else:
+                trans_risk.append(value['one_c_'+str(hour)] / value['totl_c_'+str(hour)]*10000)
+
+        w.record(key, value['totl_c_0'], value['totl_TTP_0'], ave_TTP[0], trans_risk[0] , value['totl_c_1'], value['totl_TTP_1'], ave_TTP[1], trans_risk[1] , value['totl_c_2'], value['totl_TTP_2'], ave_TTP[2], trans_risk[2] , value['totl_c_3'], value['totl_TTP_3'], ave_TTP[3], trans_risk[3] )
         w.point(float(value['lon']), float(value['lat']))
-
 
 
 if __name__ == '__main__':
@@ -165,4 +187,4 @@ if __name__ == '__main__':
     date_range = daterange(start_date, end_date)
     for i in date_range:
         analyze_transfer(i)
-    #analyze_transfer(start_date)
+    # analyze_transfer(start_date)
