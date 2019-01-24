@@ -1,3 +1,4 @@
+
 import shapefile
 from pymongo import MongoClient
 from datetime import timedelta, date
@@ -52,7 +53,7 @@ def find_gtfs_time_stamp(today_date, single_date):
 '''start_date = date(2018, 1, 29)
 end_date = date(2018, 2, 25)'''
 
-db_history = client.cota_transfer
+db_history = client.cota_dedicated
 
 # main loop
 # enumerate every day in the range
@@ -123,7 +124,7 @@ def analyze_transfer(single_date):
                 dic_stops[a_stop_id]["totl_TTP_" + str(hour)] += single_TTP
 
     # print(dic_stops)
-    location = 'D:/Luyu/transfer_data/hour_shp/' + today_date + "_nor.shp"
+    location = 'D:/Luyu/transfer_data/hour_ded_shp/' + today_date + "_ded.shp"
     # print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -171,10 +172,9 @@ def analyze_transfer(single_date):
         w.record(key, value['totl_c_0'], value['totl_TTP_0'], ave_TTP[0], trans_risk[0] , value['totl_c_1'], value['totl_TTP_1'], ave_TTP[1], trans_risk[1] , value['totl_c_2'], value['totl_TTP_2'], ave_TTP[2], trans_risk[2] , value['totl_c_3'], value['totl_TTP_3'], ave_TTP[3], trans_risk[3] )
         w.point(float(value['lon']), float(value['lat']))
 
-
 if __name__ == '__main__':
     start_date = date(2018, 1, 31)
-    end_date = date(2018, 2, 3)
+    end_date = date(2018, 9, 3)
     '''
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores)
@@ -184,7 +184,4 @@ if __name__ == '__main__':
     pool.close()
     pool.join()
     '''
-    date_range = daterange(start_date, end_date)
-    for i in date_range:
-        analyze_transfer(i)
-    # analyze_transfer(start_date)
+    analyze_transfer(start_date)
