@@ -14,17 +14,17 @@ def daterange(start_date, end_date):
 
 def switch_status(status, line):
     if status == 0:
-        line['zero_count'] += 1
+        line['zero_c'] += 1
     elif status == 1:
-        line['one_count'] += 1
+        line['one_c'] += 1
     elif status == 2:
-        line['two_count'] += 1
+        line['two_c'] += 1
     elif status == 6:
-        line['critical_count'] += 1
+        line['crit_c'] += 1
     else:
-        line['miss_count'] += 1
+        line['miss_c'] += 1
 
-    line['total_count'] += 1
+    line['totl_c'] += 1
 
 
 db_time_stamps_set = set()
@@ -39,7 +39,7 @@ for each_raw in db_time_stamps_set:
 db_time_stamps.sort()
 
 
-def find_gtfs_time_stamp(today_date, single_date):
+def find_gtfs_time_stamp(single_date):
     today_seconds = int(
         (single_date - date(1970, 1, 1)).total_seconds()) + 18000
     backup = db_time_stamps[0]
@@ -50,28 +50,26 @@ def find_gtfs_time_stamp(today_date, single_date):
     return db_time_stamps[len(db_time_stamps) - 1]
 
 
-'''start_date = date(2018, 1, 29)
-end_date = date(2018, 2, 25)'''
-
 db_history = client.cota_transfer
 
 # main loop
 # enumerate every day in the range
 
 
-def analyze_transfer(start_date, end_date):
+def analyze_transfer(start_date, end_date, weekday):
     date_range = daterange(start_date, end_date)
+    dic_stops = {}
     for single_date in date_range:
         today_date = single_date.strftime("%Y%m%d")  # date
         today_weekday = single_date.weekday()  # day of week
-        that_time_stamp = find_gtfs_time_stamp(today_date, single_date)
+        if today_weekday!= weekday:
+            continue
+        that_time_stamp = find_gtfs_time_stamp(single_date)
 
         db_today_collection = db_history[today_date]
         db_stops = db_GTFS[str(that_time_stamp) + "_stops"]
 
         db_result = list(db_today_collection.find({}))
-
-        dic_stops = {}
 
         # print(db_result)
         for single_result in db_result:
@@ -87,59 +85,59 @@ def analyze_transfer(start_date, end_date):
                     a_stop = a_stop[0]
                 line['lat'] = a_stop['stop_lat']
                 line['lon'] = a_stop['stop_lon']
-                line["total_TTP"] = 0
-                line['total_count'] = 0
-                line['zero_count'] = 0
-                line['one_count'] = 0
-                line['two_count'] = 0
-                line['miss_count'] = 0
-                line['critical_count'] = 0
+                line["totl_TTP"] = 0
+                line['totl_c'] = 0
+                line['zero_c'] = 0
+                line['one_c'] = 0
+                line['two_c'] = 0
+                line['miss_c'] = 0
+                line['crit_c'] = 0
                 dic_stops[a_stop_id] = line
 
             switch_status(single_result['status'], dic_stops[a_stop_id])
             if single_result['status'] < 3:
                 single_TTP = single_result['b_a_t'] - single_result['b_t']
                 # print(single_TTP)
-                dic_stops[a_stop_id]["total_TTP"] += single_TTP
+                dic_stops[a_stop_id]["totl_TTP"] += single_TTP
+
+        
+        print(today_date, len(dic_stops))
 
 
-
-
-    location = 'D:/Luyu/transfer_data/nor_shp/' + today_date
+    location = 'D:/Luyu/transfer_data/weekday_average/' + str(weekday) + ".shp"
     print(location)
-    w = shapefile.Writer(shapeType=1)
+    w = shapefile.Writer(location)
     w.field("stop_id", "C")
-    w.field("total_count", "N")
-    w.field("zero_count", "N")
-    w.field("one_count", "N")
-    w.field("two_count", "N")
-    w.field("miss_count", "N")
-    w.field("critical_count", "N")
+    w.field("totl_c", "N")
+    w.field("zero_c", "N")
+    w.field("one_c", "N")
+    w.field("two_c", "N")
+    w.field("miss_c", "N")
+    w.field("crit_c", "N")
 
-    w.field("total_TTP", "F")
-    w.field("ave_TTP", "F")
-    w.field("tran_risk", "F")
+    w.field("totl_TTP", "N",size=8, decimal=3)
+    w.field("ave_TTP", "N",size=8, decimal=3)
+    w.field("tran_rsk", "N",size=8, decimal=3)
     for key, value in dic_stops.items():
-        if value['zero_count']+value['one_count']+value['two_count']==0:
+        if value['zero_c']+value['one_c']+value['two_c']==0:
             continue
         else:
-            ave_TTP=value['total_TTP']/(value['zero_count']+value['one_count']+value['two_count'])
+            ave_TTP=float(value['totl_TTP']/(value['zero_c']+value['one_c']+value['two_c']))
 
-        if value['total_count']==0:
+        if value['totl_c']==0:
             continue
         else:
-            trans_risk=value['one_count']/value['total_count']
+            trans_risk=float(value['one_c'])/float(value['totl_c'])
 
-        w.record(key, value['total_count'], value['zero_count'],
-                 value['one_count'], value['two_count'], value['miss_count'], value['critical_count'],value['total_TTP'], ave_TTP+3600,trans_risk*100)
+        w.record(key, value['totl_c'], value['zero_c'],
+                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'],value['totl_TTP'], float(ave_TTP/60),(trans_risk))
         w.point(float(value['lon']), float(value['lat']))
 
-    w.save(location)
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 3, 22)
-    end_date = date(2018, 9, 3)
+    start_date = date(2018, 1, 31)
+    end_date = date(2018, 2, 26)
     '''
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores)
@@ -154,4 +152,4 @@ if __name__ == '__main__':
     for i in date_range:
         analyze_transfer(i)
 '''
-    analyze_transfer(start_date)
+    analyze_transfer(start_date, end_date, 2)
