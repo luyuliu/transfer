@@ -62,7 +62,7 @@ def analyze_transfer(start_date, end_date, weekday):
     for single_date in date_range:
         today_date = single_date.strftime("%Y%m%d")  # date
         today_weekday = single_date.weekday()  # day of week
-        if today_weekday!= weekday:
+        if today_weekday != weekday:
             continue
         that_time_stamp = find_gtfs_time_stamp(single_date)
 
@@ -92,6 +92,8 @@ def analyze_transfer(start_date, end_date, weekday):
                 line['two_c'] = 0
                 line['miss_c'] = 0
                 line['crit_c'] = 0
+                line['max_TTP'] = 0
+                line["totl_var"] = 0
                 dic_stops[a_stop_id] = line
 
             switch_status(single_result['status'], dic_stops[a_stop_id])
@@ -99,10 +101,18 @@ def analyze_transfer(start_date, end_date, weekday):
                 single_TTP = single_result['b_a_t'] - single_result['b_t']
                 # print(single_TTP)
                 dic_stops[a_stop_id]["totl_TTP"] += single_TTP
+                if single_TTP > line["max_TTP"]:
+                    line["max_TTP"] = single_TTP
 
-        
+        for single_result in db_result:
+            a_stop_id = single_result['a_st']
+            if single_result['status'] < 3:
+                single_TTP = single_result['b_a_t'] - single_result['b_t']
+                dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c'])) ) /60)**2
+
+
+
         print(today_date, len(dic_stops))
-
 
     location = 'D:/Luyu/transfer_data/weekday_average/' + str(weekday) + ".shp"
     print(location)
@@ -115,24 +125,29 @@ def analyze_transfer(start_date, end_date, weekday):
     w.field("miss_c", "N")
     w.field("crit_c", "N")
 
-    w.field("totl_TTP", "N",size=8, decimal=3)
-    w.field("ave_TTP", "N",size=8, decimal=3)
-    w.field("tran_rsk", "N",size=8, decimal=3)
-    for key, value in dic_stops.items():
-        if value['zero_c']+value['one_c']+value['two_c']==0:
-            continue
-        else:
-            ave_TTP=float(value['totl_TTP']/(value['zero_c']+value['one_c']+value['two_c']))
+    w.field("totl_TTP", "N", size=8, decimal=2)
+    w.field("ave_TTP", "N", size=8, decimal=2)
+    w.field("tran_rsk", "N", size=8, decimal=2)
+    w.field("max_TTP", "N", size=8, decimal=2)
+    w.field("var", "N", size=8, decimal=2)
 
-        if value['totl_c']==0:
+    for key, value in dic_stops.items():
+        if value['zero_c']+value['one_c']+value['two_c'] == 0:
             continue
         else:
-            trans_risk=float(value['one_c'])/float(value['totl_c'])
+            ave_TTP = float(
+                value['totl_TTP']/(value['zero_c']+value['one_c']+value['two_c']))
+            var = float(
+                value['totl_var']/(value['zero_c']+value['one_c']+value['two_c']))
+
+        if value['totl_c'] == 0:
+            continue
+        else:
+            trans_risk = float(value['one_c'])/float(value['totl_c'])
 
         w.record(key, value['totl_c'], value['zero_c'],
-                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'],value['totl_TTP'], float(ave_TTP/60),(trans_risk))
+                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk), float(value['max_TTP'])/60, var**0.5)
         w.point(float(value['lon']), float(value['lat']))
-
 
 
 if __name__ == '__main__':
@@ -152,4 +167,5 @@ if __name__ == '__main__':
     for i in date_range:
         analyze_transfer(i)
 '''
-    analyze_transfer(start_date, end_date, 2)
+    for i in range(7):
+        analyze_transfer(start_date, end_date, i)
