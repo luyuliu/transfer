@@ -71,16 +71,16 @@ def analyze_transfer(single_date):
 
     db_result_collection = []
     db_result = list(db_today_collection.find(
-        {"b_a_t": {"$gt": today_first_seconds + 25200, "$lte": today_first_seconds + 36000}}))
+        {"b_a_t": {"$gt": today_first_seconds + 54000, "$lte": today_first_seconds + 57600}}))
     db_result_collection.append(db_result)
     db_result = list(db_today_collection.find(
-        {"b_a_t": {"$gt": today_first_seconds + 36000, "$lte": today_first_seconds + 57600}}))
+        {"b_a_t": {"$gt": today_first_seconds + 57600, "$lte": today_first_seconds + 61200}}))
     db_result_collection.append(db_result)
     db_result = list(db_today_collection.find(
-        {"b_a_t": {"$gt": today_first_seconds + 57600, "$lte": today_first_seconds + 68400}}))
+        {"b_a_t": {"$gt": today_first_seconds + 61200, "$lte": today_first_seconds + 64800}}))
     db_result_collection.append(db_result)
     db_result = list(db_today_collection.find(
-        {"b_a_t": {"$gt": today_first_seconds + 68400}}))
+        {"b_a_t": {"$gt": today_first_seconds + 64800, "$lte": today_first_seconds + 68400}}))
     db_result_collection.append(db_result)
 
     # b_a_t is the time we use to decide whether the transfer's category
@@ -145,7 +145,6 @@ def analyze_transfer(single_date):
         ave_TTP = []
         trans_risk = []
         for hour in range(4):
-
             try:
                 value["totl_TTP_" + str(hour)]
             except:
