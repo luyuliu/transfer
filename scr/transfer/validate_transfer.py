@@ -302,10 +302,12 @@ def paralleling_transfers(single_date):
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 1, 29)
-    end_date = date(2018, 9, 2)
+    start_date = date(2018, 9, 3)
+    end_date = date(2019, 1, 31)
+
+
     cores = multiprocessing.cpu_count()
-    pool = multiprocessing.Pool(processes=cores)
+    pool = multiprocessing.Pool(processes=20)
     date_range = daterange(start_date, end_date)
     output=[]
     output=pool.map(paralleling_transfers, date_range)

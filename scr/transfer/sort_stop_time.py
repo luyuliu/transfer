@@ -37,14 +37,14 @@ for each_time_stamp in db_time_stamps:
     db_stop_times=db_GTFS[str(each_time_stamp)+"_stop_times"]
     db_trips=db_GTFS[str(each_time_stamp)+"_trips"]
 
-    query_stop_time=db_stop_times.find({},no_cursor_timeout=True)
+    query_stop_time=list(db_stop_times.find({},no_cursor_timeout=True))
 
     A={}
     B=0
 
     total_seq_stop_time=[]
 
-
+    db_seq.drop()
 
     print("-----------------------","FindDone","-----------------------")
     for each_stop_time in query_stop_time:
@@ -85,18 +85,15 @@ for each_time_stamp in db_time_stamps:
         A[seq_stop_time["service_id"]][seq_stop_time["stop_id"]][seq_stop_time["route_id"]].sort(key=sortArray)
         total_seq_stop_time.append(seq_stop_time)
         B+=1
-        if B%10==0:
-            break
-            print("-----------------------",B,"-----------------------")
 
     print("-----------------------","SearchDone","-----------------------")
 
     for seq_stop_time in total_seq_stop_time:
         index=A[seq_stop_time["service_id"]][seq_stop_time["stop_id"]][seq_stop_time["route_id"]].index({"trip_id":seq_stop_time["trip_id"],"time":seq_stop_time["time"]})
         seq_stop_time["seq"] = index
-        print(seq_stop_time)
-        #db_seq.insert_one(seq_stop_time)
-    print(total_seq_stop_time)
+        #print(seq_stop_time)
+        db_seq.insert_one(seq_stop_time)
+    #print(total_seq_stop_time)
 
-    #db_seq.create_index([("service_id",1),("stop_id",1),("route_id",1),("trip_id",1)])
+    db_seq.create_index([("service_id",1),("stop_id",1),("route_id",1),("trip_id",1)])
 

@@ -8,6 +8,7 @@ real-time feed.
 import pymongo
 from datetime import timedelta, date
 import time
+import multiprocessing
 
 def convertSeconds(BTimeString):
     time = BTimeString.split(":")
@@ -53,18 +54,15 @@ def find_gtfs_time_stamp(today_date,single_date): # Find the corresponding GTFS 
     return db_time_stamps[len(db_time_stamps)-1]
 
 
-start_date = date(2018, 8, 29)
-end_date = date(2018, 9, 3)
-
-
 
 # main loop
 # enumerate every day in the range
-for single_date in daterange(start_date, end_date):
+def paralleling_transfers(single_date):
     time_matrix={} # A dictionary: 1st layer: trip_id (each trip has a sequence of stops)
                                 #  2nd layer: stop_id (each stop in the sequence)
     start_time=time.time()
     today_date = single_date.strftime("%Y%m%d")  # date
+    
     db_feed_collection=db_tripupdate[today_date] # The GTFS feed collection which has been divided by each day.
     
 
@@ -79,12 +77,12 @@ for single_date in daterange(start_date, end_date):
     db_trips=db_GTFS[str(that_time_stamp)+"_trips"]
 
     db_realtime_collection=db_realtime["R"+today_date] # Collection to be added.
-    db_feeds=list(db_feed_collection.find({})) # The GTFS feed collection which has been divided by each day.
-    if db_feeds==[]: # There is no feed this day, which shouldn't happen.
+    db_feeds=(db_feed_collection.find({}, no_cursor_timeout=True)) # The GTFS feed collection which has been divided by each day.
+    if db_feeds.count()==0: # There is no feed this day, which shouldn't happen.
         print("-----------------------",today_date," : Skip -----------------------")
-        continue
+        return
     print("-----------------------","FindDone","-----------------------")
-    total_count=len(db_feeds) # Total length of this day's feed.
+    total_count=db_feeds.count() # Total length of this day's feed.
 
     count=0
     for each_feed in db_feeds: # For each feed record.
@@ -117,7 +115,7 @@ for single_date in daterange(start_date, end_date):
             seq_count+=1
         
         if count%10000==0:
-            print("-----------------------","QueryDoneBy:",count/total_count*100,"-----------------------")
+            print("-----------------------","QueryDoneBy:",count/total_count*100,today_date,"-----------------------")
         count+=1
     
     for trip_id in time_matrix.keys(): # trip_id
@@ -128,7 +126,23 @@ for single_date in daterange(start_date, end_date):
             recordss["seq"]=time_matrix[trip_id][stop_id]["seq"] # This seq is different from the seq in the trip_seq.
             recordss["time"]=time_matrix[trip_id][stop_id]["time"]
             db_realtime_collection.insert_one(recordss)
-    print("-----------------------","InsertDone:","-----------------------")
+    print("-----------------------","InsertDone:",today_date,"-----------------------")
     end_time=time.time()
     print(end_time-start_time)
     db_realtime_collection.create_index([("trip_id",1),("stop_id",1)])
+
+
+if __name__ == '__main__':
+    start_date = date(2018, 9, 3)
+    end_date = date(2019, 1, 31)
+
+    ''' for each_date in daterange(start_date, end_date):
+        paralleling_transfers(each_date)'''
+
+    cores = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(processes=20)
+    date_range = daterange(start_date, end_date)
+    output=[]
+    output=pool.map(paralleling_transfers, date_range)
+    pool.close()
+    pool.join()

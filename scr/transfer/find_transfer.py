@@ -92,6 +92,9 @@ for each_raw in db_time_stamps_set:
 db_time_stamps.sort()
 
 for each_time_stamp in db_time_stamps:
+    if each_time_stamp < 1546887112:
+        continue
+    print(each_time_stamp)
     db_seq=db_GTFS[str(each_time_stamp)+"_trip_seq"]
     db_stops=db_GTFS[str(each_time_stamp)+"_stops"]
     db_stop_times=db_GTFS[str(each_time_stamp)+"_stop_times"]

@@ -21,7 +21,7 @@ def daterange(start_date, end_date):
 end_date = date(2018, 2, 25)'''
 
 start_date = date(2018, 1, 29)
-end_date = date(2018, 9, 3)
+end_date = date(2019, 1, 31)
 
 db_history=client.cota_transfer
 
@@ -37,8 +37,9 @@ for single_date in daterange(start_date, end_date):# enumerate every day in the 
         service_id=3
         
 
-    db_today_collection=db_history[today_date]
+    db_today_collection=db_feed[today_date]
 
-    db_feeds_test=list(db_today_collection.find({}))
+    db_feeds_test=db_today_collection.find({})
+    print(db_feeds_test.count())
 
-    print("Date: ",single_date,"||","Total",db_today_collection.estimated_document_count(),"||","Normal: ",db_today_collection.find({"status":0}).count(),"Missed: ",db_today_collection.find({"status":1}).count(),"Preemptive: ",db_today_collection.find({"status":2}).count())
+    print("Date: ",single_date,"||","Total",db_today_collection.estimated_document_count())
