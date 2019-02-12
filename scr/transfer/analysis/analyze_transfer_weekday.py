@@ -59,7 +59,16 @@ db_history = client.cota_transfer
 def analyze_transfer(start_date, end_date, weekday):
     date_range = daterange(start_date, end_date)
     dic_stops = {}
+    
+    total_transfer = 0
+    total_TTP = 0
+    total_missed_transfer = 0
+
     for single_date in date_range:
+        if (single_date - date(2018, 3, 10)).total_seconds() <= 0 or (single_date - date(2018, 11, 3)).total_seconds() > 0:
+            summer_time = 0
+        else:
+            summer_time = 1
         today_date = single_date.strftime("%Y%m%d")  # date
         today_weekday = single_date.weekday()  # day of week
         if today_weekday != weekday:
@@ -98,23 +107,35 @@ def analyze_transfer(start_date, end_date, weekday):
 
             switch_status(single_result['status'], dic_stops[a_stop_id])
             if single_result['status'] < 3:
-                single_TTP = single_result['b_a_t'] - single_result['b_t']
+                single_TTP = single_result['b_a_t'] - \
+                    single_result['b_t']+3600*summer_time
+                
+                
+                total_transfer = total_transfer+1
+                total_TTP = total_TTP + single_TTP
+                if single_result['status'] == 1:
+                    total_missed_transfer = total_missed_transfer+1
+
                 # print(single_TTP)
                 dic_stops[a_stop_id]["totl_TTP"] += single_TTP
-                if single_TTP > line["max_TTP"]:
-                    line["max_TTP"] = single_TTP
+                if single_TTP > dic_stops[a_stop_id]["max_TTP"]:
+                    dic_stops[a_stop_id]["max_TTP"] = single_TTP
 
         for single_result in db_result:
             a_stop_id = single_result['a_st']
             if single_result['status'] < 3:
-                single_TTP = single_result['b_a_t'] - single_result['b_t']
+                single_TTP = single_result['b_a_t'] - \
+                    single_result['b_t']+3600*summer_time
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c'])) ) /60)**2
 
 
 
-        print(today_date, len(dic_stops))
+    if total_transfer>0:
+        print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
+    else:
+        print(today_date, 0)
 
-    location = 'D:/Luyu/transfer_data/weekday_average/' + str(weekday) + ".shp"
+    location = 'D:/Luyu/transfer_data/after_summer_time/weekday_average/' + str(weekday) + ".shp"
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -151,8 +172,8 @@ def analyze_transfer(start_date, end_date, weekday):
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 1, 31)
-    end_date = date(2018, 2, 26)
+    start_date = date(2018, 2, 1)
+    end_date = date(2018, 9, 1)
     '''
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores)

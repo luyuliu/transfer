@@ -57,8 +57,10 @@ db_history = client.cota_transfer
 # enumerate every day in the range
 
 
-def analyze_transfer(start_date, end_date):
-    date_range = daterange(start_date, end_date)
+def analyze_transfer(date_list):
+    date_range = []
+    for date_part in date_list:
+        date_range.append(date(date_part[2], date_part[0], date_part[1]))
     dic_stops = {}
     for single_date in date_range:
         if (single_date - date(2018, 3, 10)).total_seconds() <= 0 or (single_date - date(2018, 11, 3)).total_seconds() > 0:
@@ -74,7 +76,10 @@ def analyze_transfer(start_date, end_date):
         db_result = list(db_today_collection.find({}))
 
         # print(db_result)
-        count = 0
+        total_transfer = 0
+        total_TTP = 0
+        total_missed_transfer = 0
+
         for single_result in db_result:
             a_stop_id = single_result['a_st']
             try:
@@ -103,8 +108,11 @@ def analyze_transfer(start_date, end_date):
             if single_result['status'] < 3:
                 single_TTP = single_result['b_a_t'] - \
                     single_result['b_t']+3600*summer_time
-                
-                count=count+1
+
+                total_transfer = total_transfer+1
+                total_TTP = total_TTP + single_TTP
+                if single_result['status'] == 1:
+                    total_missed_transfer = total_missed_transfer+1
 
                 dic_stops[a_stop_id]["totl_TTP"] += single_TTP
                 if single_TTP > dic_stops[a_stop_id]["max_TTP"]:
@@ -119,10 +127,13 @@ def analyze_transfer(start_date, end_date):
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
 
-        print(today_date, len(dic_stops), count)
+        if total_transfer > 0:
+            print(today_date, len(dic_stops), total_transfer, round(
+                total_TTP/total_transfer, 2), round(total_missed_transfer/total_transfer, 4))
+        else:
+            print(today_date, 0)
 
-    location = 'D:/Luyu/transfer_data/after_summer_time/month_average/' + \
-        start_date.strftime("%Y%m%d") + ".shp"
+    location = 'D:/Luyu/transfer_data/after_summer_time/rain.shp'
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -159,10 +170,8 @@ def analyze_transfer(start_date, end_date):
 
 
 if __name__ == '__main__':
-    date_list = []
+    date_list = [[2, 24, 2018], [4, 3, 2018], [4, 15, 2018], [5, 15, 2018], [5, 21, 2018], [6, 21, 2018], [7, 3, 2018], [7, 20, 2018], [8, 17, 2018], [9, 1, 2018], [9, 8, 2018], [9, 9, 2018], [9, 24, 2018]]
 
-    start_date1 = date(2018, 5, 31)
-    end_date1 = date(2018, 9, 2)
 
     '''b=0
     for single_date2 in daterange(start_date1, end_date1):
@@ -188,9 +197,5 @@ if __name__ == '__main__':
             elif i == len(date_list)-1:
                 print(date_list[i], end_date1)
                 analyze_transfer(date_list[i], end_date1)'''
-    for i in range(6, 9):
-        if i == 6:
-            analyze_transfer(date(2018, 5, 31), date(2018, i+1, 1))
-        else:
-            analyze_transfer(date(2018, i, 1), date(2018, i+1, 1))
-    
+
+    analyze_transfer(date_list)
