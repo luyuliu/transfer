@@ -122,7 +122,6 @@ def analyze_transfer(start_date, end_date, hour):
                     single_result['b_t']+3600*summer_time
 
                 total_transfer = total_transfer+1
-                print("asdf")
                 total_TTP = total_TTP + single_TTP
                 if single_result['status'] == 1:
                     total_missed_transfer = total_missed_transfer+1
@@ -140,12 +139,6 @@ def analyze_transfer(start_date, end_date, hour):
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
 
-        print(today_date, len(dic_stops), total_transfer)
-
-        if total_transfer>0:
-            print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
-        else:
-            print(today_date, 0)
 
     if total_transfer > 0:
         print(hour, len(dic_stops), total_transfer, round(
@@ -207,5 +200,5 @@ if __name__ == '__main__':
     for i in date_range:
         analyze_transfer(i)
 '''
-    for i in range(24):
+    for i in range(5, 24):
         analyze_transfer(start_date, end_date, i)
