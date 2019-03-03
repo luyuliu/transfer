@@ -305,7 +305,10 @@ if __name__ == '__main__':
     start_date = date(2018, 9, 3)
     end_date = date(2019, 1, 31)
 
-
+    paralleling_transfers(date(2018, 9, 1))
+    paralleling_transfers(date(2018, 9, 2))
+    paralleling_transfers(date(2018, 9, 3))
+    '''
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=20)
     date_range = daterange(start_date, end_date)
@@ -318,7 +321,7 @@ if __name__ == '__main__':
     i=0
     for single_date in date_range:
         f.write(str(output[i])+single_date.strftime("%Y%m%d"))
-    f.close()
+    f.close()'''
 
 
 # May 06 not working.

@@ -130,7 +130,7 @@ def analyze_transfer(start_date, end_date):
         else:
             print(today_date, 0)
 
-    location = 'D:/Luyu/transfer_data/after_summer_time/all.shp'
+    location = 'D:/Luyu/transfer_data/all_year/dedicated/Nov_norm.shp'
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -169,8 +169,8 @@ def analyze_transfer(start_date, end_date):
 if __name__ == '__main__':
     date_list = []
 
-    start_date1 = date(2018, 5, 31)
-    end_date1 = date(2018, 9, 2)
+    start_date1 = date(2018, 11, 4)
+    end_date1 = date(2019, 1, 31)
 
     '''b=0
     for single_date2 in daterange(start_date1, end_date1):
@@ -196,4 +196,4 @@ if __name__ == '__main__':
             elif i == len(date_list)-1:
                 print(date_list[i], end_date1)
                 analyze_transfer(date_list[i], end_date1)'''
-    analyze_transfer(date(2018, 2, 1), date(2018, 9, 1))
+    analyze_transfer(start_date1, end_date1)

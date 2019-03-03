@@ -53,6 +53,8 @@ def find_gtfs_time_stamp(single_date):
 
 db_history = client.cota_dedicated
 
+dedicated_line = 2
+
 # main loop
 # enumerate every day in the range
 
@@ -79,6 +81,7 @@ def analyze_transfer(start_date, end_date):
         total_missed_transfer = 0
 
         for single_result in db_result:
+            calibration=0
             a_stop_id = single_result['a_st']
             try:
                 dic_stops[a_stop_id]
@@ -104,8 +107,9 @@ def analyze_transfer(start_date, end_date):
 
             switch_status(single_result['status'], dic_stops[a_stop_id])
             if single_result['status'] < 3:
+                
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time
+                    single_result['b_t']+3600*summer_time-3600*calibration
 
                 total_transfer = total_transfer+1
                 total_TTP = total_TTP + single_TTP
@@ -115,12 +119,15 @@ def analyze_transfer(start_date, end_date):
                 dic_stops[a_stop_id]["totl_TTP"] += single_TTP
                 if single_TTP > dic_stops[a_stop_id]["max_TTP"]:
                     dic_stops[a_stop_id]["max_TTP"] = single_TTP
+                #if single_TTP>3600 or single_TTP<-100:
+                #    print(single_result['a_ro'],single_result['b_ro'], single_TTP)                  
 
         for single_result in db_result:
             a_stop_id = single_result['a_st']
             if single_result['status'] < 3:
+                
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time
+                    single_result['b_t']+3600*summer_time-3600*calibration
 
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
@@ -130,7 +137,7 @@ def analyze_transfer(start_date, end_date):
         else:
             print(today_date, 0)
 
-    location = 'D:/Luyu/transfer_data/after_summer_time/dedicated/all.shp'
+    location = 'D:/Luyu/transfer_data/all_year/dedicated/Nov.shp'
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -169,8 +176,8 @@ def analyze_transfer(start_date, end_date):
 if __name__ == '__main__':
     date_list = []
 
-    start_date1 = date(2018, 5, 31)
-    end_date1 = date(2018, 9, 2)
+    start_date1 = date(2018, 11, 4)
+    end_date1 = date(2019, 1, 31)
 
     '''b=0
     for single_date2 in daterange(start_date1, end_date1):
@@ -196,4 +203,4 @@ if __name__ == '__main__':
             elif i == len(date_list)-1:
                 print(date_list[i], end_date1)
                 analyze_transfer(date_list[i], end_date1)'''
-    analyze_transfer(date(2018, 2, 1), date(2018, 9, 1))
+    analyze_transfer(start_date1, end_date1)
