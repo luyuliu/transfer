@@ -44,7 +44,7 @@ def find_gtfs_time_stamp(single_date):
 
 
 start_date = date(2018, 1, 29)
-end_date = date(2018, 9, 3)
+end_date = date(2019, 1, 31)
 
 
 # main loop
@@ -54,5 +54,5 @@ for single_date in daterange(start_date, end_date):
     that_time_stamp = find_gtfs_time_stamp(single_date)
     a=(datetime.datetime.utcfromtimestamp(that_time_stamp).strftime('%Y-%m-%d %H:%M:%S'))
     if that_time_stamp!=b:
-        print(a)
+        print(a, that_time_stamp)
     b=that_time_stamp

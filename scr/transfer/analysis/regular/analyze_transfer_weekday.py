@@ -127,15 +127,18 @@ def analyze_transfer(start_date, end_date, weekday):
                 single_TTP = single_result['b_a_t'] - \
                     single_result['b_t']+3600*summer_time
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c'])) ) /60)**2
-
+        if total_transfer>0:
+            print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
+        else:
+            print(today_date, 0)   
 
 
     if total_transfer>0:
-        print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
+        print(weekday, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
     else:
-        print(today_date, 0)
+        print(weekday, 0)
 
-    location = 'D:/Luyu/transfer_data/after_summer_time/weekday_average/' + str(weekday) + ".shp"
+    location = 'D:/Luyu/transfer_data/all_year/weekday_average/' + str(weekday) + ".shp"
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -172,8 +175,8 @@ def analyze_transfer(start_date, end_date, weekday):
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 2, 1)
-    end_date = date(2018, 9, 1)
+    start_date = date(2018, 1, 31)
+    end_date = date(2019, 1, 31)
     '''
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores)

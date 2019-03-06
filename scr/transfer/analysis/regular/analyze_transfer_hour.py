@@ -91,8 +91,11 @@ def analyze_transfer(start_date, end_date, hour):
             db_result = list(db_today_collection.find({"b_a_t": {
                 "$gt": today_first_seconds + hour*60*60, "$lte": today_first_seconds + (hour+1)*60*60}}))
 
+
+        error_count=0
         # print(db_result)
         for single_result in db_result:
+
             a_stop_id = single_result['a_st']
             try:
                 dic_stops[a_stop_id]
@@ -121,6 +124,9 @@ def analyze_transfer(start_date, end_date, hour):
                 single_TTP = single_result['b_a_t'] - \
                     single_result['b_t']+3600*summer_time
 
+                if single_TTP>1800:
+                    error_count=error_count+1
+
                 total_transfer = total_transfer+1
                 total_TTP = total_TTP + single_TTP
                 if single_result['status'] == 1:
@@ -136,9 +142,11 @@ def analyze_transfer(start_date, end_date, hour):
             if single_result['status'] < 3:
                 single_TTP = single_result['b_a_t'] - \
                     single_result['b_t']+3600*summer_time
+                    
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
 
+        print(error_count,today_date,error_count/(len(db_result)+1))
 
     if total_transfer > 0:
         print(hour, len(dic_stops), total_transfer, round(
@@ -146,7 +154,7 @@ def analyze_transfer(start_date, end_date, hour):
     else:
         print(hour, 0)
 
-    location = 'D:/Luyu/transfer_data/after_summer_time/hour_average/' + \
+    location = 'D:/Luyu/transfer_data/all_year/hour_average_test/' + \
         str(hour) + ".shp"
     print(location)
     w = shapefile.Writer(location)
@@ -184,8 +192,9 @@ def analyze_transfer(start_date, end_date, hour):
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 2, 1)
-    end_date = date(2018, 9, 1)
+    start_date = date(2018, 1, 31)
+    end_date = date(2019, 1, 31)
+    hour_list=[8,9,17,18,22,23]
     '''
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores)
@@ -200,5 +209,5 @@ if __name__ == '__main__':
     for i in date_range:
         analyze_transfer(i)
 '''
-    for i in range(5, 24):
+    for i in hour_list:
         analyze_transfer(start_date, end_date, i)

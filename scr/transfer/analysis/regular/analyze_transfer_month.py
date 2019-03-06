@@ -124,13 +124,17 @@ def analyze_transfer(start_date, end_date):
 
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
+        if total_transfer>0:
+            print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
+        else:
+            print(today_date, 0)            
 
     if total_transfer>0:
         print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
     else:
         print(today_date, 0)
 
-    location = 'D:/Luyu/transfer_data/after_summer_time/month_average/' + \
+    location = 'D:/Luyu/transfer_data/all_year/month_average/' + \
         start_date.strftime("%Y%m%d") + ".shp"
     print(location)
     w = shapefile.Writer(location)
@@ -170,8 +174,6 @@ def analyze_transfer(start_date, end_date):
 if __name__ == '__main__':
     date_list = []
 
-    start_date1 = date(2018, 5, 31)
-    end_date1 = date(2018, 9, 2)
 
     '''b=0
     for single_date2 in daterange(start_date1, end_date1):
@@ -197,9 +199,11 @@ if __name__ == '__main__':
             elif i == len(date_list)-1:
                 print(date_list[i], end_date1)
                 analyze_transfer(date_list[i], end_date1)'''
-    for i in range(2, 6):
+    for i in range(2, 12):
         if i == 6:
             analyze_transfer(date(2018, 5, 31), date(2018, i+1, 1))
         else:
             analyze_transfer(date(2018, i, 1), date(2018, i+1, 1))
     
+    analyze_transfer(date(2018, 12, 1), date(2019, 1, 1))
+    analyze_transfer(date(2019, 1, 1), date(2019, 2, 1))

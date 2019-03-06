@@ -51,16 +51,16 @@ def find_gtfs_time_stamp(single_date):
     return db_time_stamps[len(db_time_stamps) - 1]
 
 
-db_history = client.cota_transfer
+db_history = client.cota_dedicated
+
+dedicated_line = 2
 
 # main loop
 # enumerate every day in the range
 
 
-def analyze_transfer(date_list):
-    date_range = []
-    for date_part in date_list:
-        date_range.append(date(date_part[2], date_part[0], date_part[1]))
+def analyze_transfer(start_date, end_date):
+    date_range = daterange(start_date, end_date)
     dic_stops = {}
     for single_date in date_range:
         if (single_date - date(2018, 3, 10)).total_seconds() <= 0 or (single_date - date(2018, 11, 3)).total_seconds() > 0:
@@ -79,8 +79,19 @@ def analyze_transfer(date_list):
         total_transfer = 0
         total_TTP = 0
         total_missed_transfer = 0
+        total_dedicated_transfer = 0
+        
+        a_transfer = 0
+        a_TTP = 0
+        a_one_transfer=0
+        a_two_transfer=0
+        b_transfer = 0
+        b_TTP = 0
+        b_one_transfer=0
+        b_two_transfer=0
 
         for single_result in db_result:
+            calibration=0
             a_stop_id = single_result['a_st']
             try:
                 dic_stops[a_stop_id]
@@ -102,13 +113,38 @@ def analyze_transfer(date_list):
                 line['crit_c'] = 0
                 line['max_TTP'] = 0
                 line["totl_var"] = 0
+                line["ded_c"] = 0
                 dic_stops[a_stop_id] = line
 
             switch_status(single_result['status'], dic_stops[a_stop_id])
             if single_result['status'] < 3:
+                try:
+                    single_result['nor_b_a_t']
+                except:
+                    continue
+                if single_result['nor_b_a_t'] == -1:
+                    continue
+                
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time
-
+                    single_result['nor_b_a_t']+3600*summer_time-3600*calibration
+                if single_result['a_ro']*single_result['a_ro'] == dedicated_line*dedicated_line:
+                    a_transfer = a_transfer+1
+                    dic_stops[a_stop_id]["ded_c"] = dic_stops[a_stop_id]["ded_c"]+1
+                    a_TTP=a_TTP+single_TTP
+                    if single_result['status']==1:
+                        a_one_transfer = a_one_transfer+1
+                    elif single_result['status']==2:
+                        a_two_transfer = a_two_transfer+1
+                elif single_result['b_ro']*single_result['b_ro'] == dedicated_line*dedicated_line:
+                    b_transfer = b_transfer+1
+                    dic_stops[a_stop_id]["ded_c"] = dic_stops[a_stop_id]["ded_c"]+1
+                    b_TTP=b_TTP+single_TTP
+                    if single_result['status']==1:
+                        b_one_transfer = b_one_transfer+1
+                    elif single_result['status']==2:
+                        b_two_transfer = b_two_transfer+1
+                
+                
                 total_transfer = total_transfer+1
                 total_TTP = total_TTP + single_TTP
                 if single_result['status'] == 1:
@@ -117,23 +153,31 @@ def analyze_transfer(date_list):
                 dic_stops[a_stop_id]["totl_TTP"] += single_TTP
                 if single_TTP > dic_stops[a_stop_id]["max_TTP"]:
                     dic_stops[a_stop_id]["max_TTP"] = single_TTP
+                #if single_TTP>3600 or single_TTP<-100:
+                #    print(single_result['a_ro'],single_result['b_ro'], single_TTP)                  
 
         for single_result in db_result:
             a_stop_id = single_result['a_st']
             if single_result['status'] < 3:
+                try:
+                    single_result['nor_b_a_t']
+                except:
+                    continue
+                if single_result['nor_b_a_t'] == -1:
+                    continue
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time
+                    single_result['nor_b_a_t']+3600*summer_time-3600*calibration
+                
 
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
 
-        if total_transfer > 0:
-            print(today_date, len(dic_stops), total_transfer, round(
-                total_TTP/total_transfer, 2), round(total_missed_transfer/total_transfer, 4))
+        if total_transfer>0:
+            print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4), total_dedicated_transfer, a_transfer, b_transfer, a_TTP, b_TTP, a_one_transfer, b_one_transfer, a_two_transfer, b_two_transfer)
         else:
             print(today_date, 0)
 
-    location = 'D:/Luyu/transfer_data/all_year/football.shp'
+    location = 'D:/Luyu/transfer_data/all_year/dedicated/with_ded_c.shp'
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -143,6 +187,7 @@ def analyze_transfer(date_list):
     w.field("two_c", "N")
     w.field("miss_c", "N")
     w.field("crit_c", "N")
+    w.field("ded_c", "N")
 
     w.field("totl_TTP", "N", size=8, decimal=2)
     w.field("ave_TTP", "N", size=8, decimal=2)
@@ -165,13 +210,38 @@ def analyze_transfer(date_list):
             trans_risk = float(value['one_c'])/float(value['totl_c'])
 
         w.record(key, value['totl_c'], value['zero_c'],
-                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk), float(value['max_TTP'])/60, var**0.5)
+                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['ded_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk*100), float(value['max_TTP'])/60, var**0.5)
         w.point(float(value['lon']), float(value['lat']))
 
 
 if __name__ == '__main__':
-    date_list = [[2, 24, 2018], [4, 3, 2018], [4, 15, 2018], [5, 15, 2018], [5, 21, 2018], [6, 21, 2018], [7, 3, 2018], [
-        7, 20, 2018], [8, 17, 2018], [9, 1, 2018], [9, 8, 2018], [9, 9, 2018], [9, 24, 2018], [11, 1, 2018], [12, 15, 2018], [12, 31, 2018]]
+    date_list = []
 
-    football_list = [[9, 1, 2018], [9, 8, 2018], [9, 22, 2018], [10, 6, 2018], [10, 13, 2018], [11, 3, 2018], [11, 24, 2018]]
-    analyze_transfer(football_list)
+    start_date1 = date(2018, 11, 4)
+    end_date1 = date(2019, 1, 31)
+
+    '''b=0
+    for single_date2 in daterange(start_date1, end_date1):
+        that_time_stamp = find_gtfs_time_stamp(single_date2)
+        a=(datetime.datetime.utcfromtimestamp(that_time_stamp).strftime('%Y-%m-%d %H:%M:%S'))
+        if that_time_stamp!=b:
+            date_list.append(datetime.datetime.utcfromtimestamp(that_time_stamp).date())
+        b=that_time_stamp
+
+
+    print("GTFS_List",date_list)
+    if len(date_list)==1:
+        analyze_transfer(start_date1, end_date1)
+    else:
+        for i in range(len(date_list)):
+            print(i)
+            if i == 1:
+                print(start_date1, date_list[i+1])
+                analyze_transfer(start_date1, date_list[i+1])
+            elif i<len(date_list)-1 and i > 1:
+                print(date_list[i], date_list[i+1])
+                analyze_transfer(date_list[i], date_list[i+1])
+            elif i == len(date_list)-1:
+                print(date_list[i], end_date1)
+                analyze_transfer(date_list[i], end_date1)'''
+    analyze_transfer(start_date1, end_date1)
