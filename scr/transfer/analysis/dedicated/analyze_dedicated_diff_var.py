@@ -75,10 +75,10 @@ def analyze_transfer(start_date, end_date):
 
         db_result = list(db_today_collection.find({}))
 
+        # print(db_result)
         total_transfer = 0
         total_TTP = 0
         total_missed_transfer = 0
-
         total_dedicated_transfer = 0
         
         a_transfer = 0
@@ -113,16 +113,23 @@ def analyze_transfer(start_date, end_date):
                 line['crit_c'] = 0
                 line['max_TTP'] = 0
                 line["totl_var"] = 0
+                line["ded_c"] = 0
                 dic_stops[a_stop_id] = line
 
             switch_status(single_result['status'], dic_stops[a_stop_id])
             if single_result['status'] < 3:
+                try:
+                    single_result['nor_b_a_t']
+                except:
+                    continue
+                if single_result['nor_b_a_t'] == -1:
+                    continue
                 
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time-3600*calibration
+                    single_result['nor_b_a_t']+3600*summer_time-3600*calibration
                 if single_result['a_ro']*single_result['a_ro'] == dedicated_line*dedicated_line:
                     a_transfer = a_transfer+1
-                    total_dedicated_transfer = total_dedicated_transfer+1
+                    dic_stops[a_stop_id]["ded_c"] = dic_stops[a_stop_id]["ded_c"]+1
                     a_TTP=a_TTP+single_TTP
                     if single_result['status']==1:
                         a_one_transfer = a_one_transfer+1
@@ -130,7 +137,7 @@ def analyze_transfer(start_date, end_date):
                         a_two_transfer = a_two_transfer+1
                 elif single_result['b_ro']*single_result['b_ro'] == dedicated_line*dedicated_line:
                     b_transfer = b_transfer+1
-                    total_dedicated_transfer = total_dedicated_transfer+1
+                    dic_stops[a_stop_id]["ded_c"] = dic_stops[a_stop_id]["ded_c"]+1
                     b_TTP=b_TTP+single_TTP
                     if single_result['status']==1:
                         b_one_transfer = b_one_transfer+1
@@ -146,15 +153,21 @@ def analyze_transfer(start_date, end_date):
                 dic_stops[a_stop_id]["totl_TTP"] += single_TTP
                 if single_TTP > dic_stops[a_stop_id]["max_TTP"]:
                     dic_stops[a_stop_id]["max_TTP"] = single_TTP
-                    # print(single_result['a_ro'],single_result['b_ro'], single_TTP)
-
+                #if single_TTP>3600 or single_TTP<-100:
+                #    print(single_result['a_ro'],single_result['b_ro'], single_TTP)                  
 
         for single_result in db_result:
             a_stop_id = single_result['a_st']
             if single_result['status'] < 3:
-                
+                try:
+                    single_result['nor_b_a_t']
+                except:
+                    continue
+                if single_result['nor_b_a_t'] == -1:
+                    continue
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time-3600*calibration
+                    single_result['nor_b_a_t']+3600*summer_time-3600*calibration
+                
 
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
@@ -164,7 +177,7 @@ def analyze_transfer(start_date, end_date):
         else:
             print(today_date, 0)
 
-    location = 'D:/Luyu/transfer_data/all_year/dedicated/a_and_b_dedicated.shp'
+    location = 'D:/Luyu/transfer_data/all_year/dedicated/with_ded_c.shp'
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -174,6 +187,7 @@ def analyze_transfer(start_date, end_date):
     w.field("two_c", "N")
     w.field("miss_c", "N")
     w.field("crit_c", "N")
+    w.field("ded_c", "N")
 
     w.field("totl_TTP", "N", size=8, decimal=2)
     w.field("ave_TTP", "N", size=8, decimal=2)
@@ -196,7 +210,7 @@ def analyze_transfer(start_date, end_date):
             trans_risk = float(value['one_c'])/float(value['totl_c'])
 
         w.record(key, value['totl_c'], value['zero_c'],
-                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk*100), float(value['max_TTP'])/60, var**0.5)
+                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['ded_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk*100), float(value['max_TTP'])/60, var**0.5)
         w.point(float(value['lon']), float(value['lat']))
 
 
