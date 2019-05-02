@@ -21,7 +21,7 @@ def convertSeconds(BTimeString):
 client = pymongo.MongoClient('mongodb://localhost:27017/')
 db_GTFS = client.cota_gtfs
 
-db_tripupdate=client.trip_update
+db_tripupdate=client.cota_tripupdate
 
 db_realtime=client.cota_real_time
 
@@ -135,14 +135,15 @@ def paralleling_transfers(single_date):
 if __name__ == '__main__':
     start_date = date(2018, 9, 3)
     end_date = date(2019, 1, 31)
-
+    each_date = date(2018, 2, 1)
+    paralleling_transfers(each_date)
     ''' for each_date in daterange(start_date, end_date):
         paralleling_transfers(each_date)'''
 
-    cores = multiprocessing.cpu_count()
-    pool = multiprocessing.Pool(processes=20)
-    date_range = daterange(start_date, end_date)
-    output=[]
-    output=pool.map(paralleling_transfers, date_range)
-    pool.close()
-    pool.join()
+    # cores = multiprocessing.cpu_count()
+    # pool = multiprocessing.Pool(processes=20)
+    # date_range = daterange(start_date, end_date)
+    # output=[]
+    # output=pool.map(paralleling_transfers, date_range)
+    # pool.close()
+    # pool.join()
