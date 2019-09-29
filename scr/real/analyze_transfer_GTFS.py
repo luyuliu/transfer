@@ -71,7 +71,7 @@ def analyze_transfer(start_date, end_date):
         db_today_collection = db_history[today_date]
         db_stops = db_GTFS[str(that_time_stamp) + "_stops"]
 
-        db_result = list(db_today_collection.find({}))
+        db_result = list(db_today_collection.find({"b_ro": 2}))
 
         # print(db_result)
         total_transfer = 0
@@ -169,7 +169,7 @@ def analyze_transfer(start_date, end_date):
 if __name__ == '__main__':
     date_list = []
 
-    start_date1 = date(2018, 5, 4)
+    start_date1 = date(2018, 5, 7)
     end_date1 = date(2019, 1, 31)
 
     '''b=0
