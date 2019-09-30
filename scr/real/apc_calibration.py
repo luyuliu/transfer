@@ -19,8 +19,8 @@ import multiprocessing
 # database setup
 client = MongoClient('mongodb://localhost:27017/')
 db_GTFS = client.cota_gtfs
-db_realtime=client.cota_apc
-db_history = client.cota_apc_transfer
+db_realtime=client.cota_apc_real_time
+db_history = client.cota_merge_transfer
 
 db_gtfs_realtime = client.cota_real_time
 
@@ -132,10 +132,10 @@ def paralleling_transfers(single_date):
             each_transfer["a_time"]
 
         db_real_b_trip = list(db_realtime_collection.find(
-            {"trip_id": int(b_trip_id)}))
+            {"trip_id": (b_trip_id)}))
 
         db_real_a_trip = list(db_realtime_collection.find(
-            {"trip_id": int(a_trip_id)}))
+            {"trip_id": (a_trip_id)}))
         # print((today_date),(b_trip_id),db_real_b_trip)
 
         ##### Start: Omit the null value #####
@@ -152,7 +152,7 @@ def paralleling_transfers(single_date):
         # Find the real_record in the feed data according to the tripid and stopid
         b_real_time = -1
         b_trip_feeds = (db_realtime_collection.find_one(
-            {"trip_id": int(b_trip_id), "stop_id": b_stop_id}))
+            {"trip_id": (b_trip_id), "stop_id": b_stop_id}))
 
         if (b_trip_feeds) != None:
             b_real_time = b_trip_feeds["actual_move_time"]
@@ -169,7 +169,7 @@ def paralleling_transfers(single_date):
 
         a_real_time = -1
         a_trip_feeds = (db_realtime_collection.find_one(
-            {"trip_id": int(a_trip_id), "stop_id": a_stop_id}))
+            {"trip_id": (a_trip_id), "stop_id": a_stop_id}))
         if (a_trip_feeds) != None:
             a_real_time = a_trip_feeds["actual_move_time"]
                     
@@ -222,15 +222,11 @@ def paralleling_transfers(single_date):
             seq_id = each_trip["seq"]
             # Find the b_alt_time for this trip_id and compare it to the b_alt_time (overall). Until we find the smallest one.
             #print(b_stop_id,str(i_trip_id))
-            query_realtime=(db_realtime_collection.find_one({"stop_id":b_stop_id,"trip_id":int(i_trip_id)}))
-            if query_realtime== None:
-                query_realtime=(col_gtfs_real_time.find_one({"stop_id":b_stop_id,"trip_id":str(i_trip_id)}))
-                if query_realtime== None:
-                    continue
-                else:  
-                    i_real_time=query_realtime["time"]
+            query_realtime=(db_realtime_collection.find_one({"stop_id":b_stop_id,"trip_id":(i_trip_id)}))
+            if query_realtime == None:
+                continue
             else:
-                i_real_time=query_realtime["actual_move_time"]
+                i_real_time = query_realtime["actual_move_time"]
             if b_alt_time > i_real_time and i_real_time >= a_real_time + real_transfer["w_t"]:
                 b_alt_time = i_real_time
                 b_alt_sequence_id = seq_id - flag_sequence_id
@@ -316,12 +312,3 @@ if __name__ == '__main__':
     output=pool.map(paralleling_transfers, date_range)
     pool.close()
     pool.join()
-
-    f=open("D:\\Luyu\\transfer_data\\archive\\"+str(time.time())+".txt","a")
-    i=0
-    for single_date in date_range:
-        f.write(str(output[i])+single_date.strftime("%Y%m%d"))
-    f.close()
-
-
-# May 06 not working.
