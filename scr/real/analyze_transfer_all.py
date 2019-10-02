@@ -169,7 +169,7 @@ def analyze_transfer(start_date, end_date):
 if __name__ == '__main__':
     date_list = []
 
-    start_date1 = date(2018, 5, 7)
+    start_date1 = date(2018, 5, 4)
     end_date1 = date(2019, 1, 31)
 
     '''b=0

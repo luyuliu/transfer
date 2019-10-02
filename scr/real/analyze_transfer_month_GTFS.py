@@ -106,7 +106,7 @@ def analyze_transfer(start_date, end_date):
             if single_result['status'] < 3:
                 single_TTP = single_result['b_a_t'] - \
                     single_result['b_t']+3600*summer_time
-
+                
                 total_transfer = total_transfer+1
                 total_TTP = total_TTP + single_TTP
                 if single_result['status'] == 1:
@@ -124,13 +124,18 @@ def analyze_transfer(start_date, end_date):
 
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
-
         if total_transfer>0:
             print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
         else:
-            print(today_date, 0)
+            print(today_date, 0)            
 
-    location = 'D:/Luyu/transfer_data/all_year/dedicated/Nov_norm.shp'
+    if total_transfer>0:
+        print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
+    else:
+        print(today_date, 0)
+
+    location = 'D:/Luyu/transfer_data/all_year/month_average/' + \
+        start_date.strftime("%Y%m%d") + ".shp"
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -162,15 +167,13 @@ def analyze_transfer(start_date, end_date):
             trans_risk = float(value['one_c'])/float(value['totl_c'])
 
         w.record(key, value['totl_c'], value['zero_c'],
-                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk*100), float(value['max_TTP'])/60, var**0.5)
+                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk), float(value['max_TTP'])/60, var**0.5)
         w.point(float(value['lon']), float(value['lat']))
 
 
 if __name__ == '__main__':
     date_list = []
 
-    start_date1 = date(2018, 5, 7)
-    end_date1 = date(2019, 1, 31)
 
     '''b=0
     for single_date2 in daterange(start_date1, end_date1):
@@ -196,4 +199,11 @@ if __name__ == '__main__':
             elif i == len(date_list)-1:
                 print(date_list[i], end_date1)
                 analyze_transfer(date_list[i], end_date1)'''
-    analyze_transfer(start_date1, end_date1)
+    for i in range(2, 12):
+        if i == 6:
+            analyze_transfer(date(2018, 5, 31), date(2018, i+1, 1))
+        else:
+            analyze_transfer(date(2018, i, 1), date(2018, i+1, 1))
+    
+    analyze_transfer(date(2018, 12, 1), date(2019, 1, 1))
+    analyze_transfer(date(2019, 1, 1), date(2019, 2, 1))

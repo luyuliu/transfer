@@ -1,7 +1,6 @@
-import shapefile
+import shapefile, time
 from pymongo import MongoClient
 from datetime import timedelta, date
-import datetime
 import multiprocessing
 client = MongoClient('mongodb://localhost:27017/')
 
@@ -41,8 +40,8 @@ db_time_stamps.sort()
 
 
 def find_gtfs_time_stamp(single_date):
-    today_seconds = int(
-        (single_date - date(1970, 1, 1)).total_seconds()) + 18000
+    today_date = single_date.strftime("%Y%m%d")  # date
+    today_seconds = time.mktime(time.strptime(today_date, "%Y%m%d"))
     backup = db_time_stamps[0]
     for each_time_stamp in db_time_stamps:
         if each_time_stamp - today_seconds > 86400:
@@ -51,34 +50,47 @@ def find_gtfs_time_stamp(single_date):
     return db_time_stamps[len(db_time_stamps) - 1]
 
 
-db_history = client.cota_transfer
+db_history = client.cota_merge_transfer
 
 # main loop
 # enumerate every day in the range
 
 
-def analyze_transfer(start_date, end_date):
+def analyze_transfer(start_date, end_date, hour):
     date_range = daterange(start_date, end_date)
     dic_stops = {}
+
+    total_transfer = 0
+    total_TTP = 0
+    total_missed_transfer = 0
+
+    print(hour,"start")
     for single_date in date_range:
-        if (single_date - date(2018, 3, 10)).total_seconds() <= 0 or (single_date - date(2018, 11, 3)).total_seconds() > 0:
-            summer_time = 0
-        else:
-            summer_time = 1
         today_date = single_date.strftime("%Y%m%d")  # date
+        today_weekday = single_date.weekday()  # day of week
+
         that_time_stamp = find_gtfs_time_stamp(single_date)
 
         db_today_collection = db_history[today_date]
         db_stops = db_GTFS[str(that_time_stamp) + "_stops"]
 
-        db_result = list(db_today_collection.find({}))
+        today_first_seconds = time.mktime(time.strptime(today_date, "%Y%m%d"))
 
+        if hour == 0:
+            db_result = list(db_today_collection.find(
+                {"b_a_t": {"$lte": today_first_seconds + (hour+1)*60*60}}))
+        elif hour == 23:
+            db_result = list(db_today_collection.find({"b_a_t": {
+                "$gt": today_first_seconds + hour*60*60}}))
+        else:
+            db_result = list(db_today_collection.find({"b_a_t": {
+                "$gt": today_first_seconds + hour*60*60, "$lte": today_first_seconds + (hour+1)*60*60}}))
+
+
+        error_count=0
         # print(db_result)
-        total_transfer = 0
-        total_TTP = 0
-        total_missed_transfer = 0
-
         for single_result in db_result:
+
             a_stop_id = single_result['a_st']
             try:
                 dic_stops[a_stop_id]
@@ -105,13 +117,17 @@ def analyze_transfer(start_date, end_date):
             switch_status(single_result['status'], dic_stops[a_stop_id])
             if single_result['status'] < 3:
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time
+                    single_result['b_t']
+
+                if single_TTP>1800:
+                    error_count=error_count+1
 
                 total_transfer = total_transfer+1
                 total_TTP = total_TTP + single_TTP
                 if single_result['status'] == 1:
                     total_missed_transfer = total_missed_transfer+1
 
+                # print(single_TTP)
                 dic_stops[a_stop_id]["totl_TTP"] += single_TTP
                 if single_TTP > dic_stops[a_stop_id]["max_TTP"]:
                     dic_stops[a_stop_id]["max_TTP"] = single_TTP
@@ -120,17 +136,21 @@ def analyze_transfer(start_date, end_date):
             a_stop_id = single_result['a_st']
             if single_result['status'] < 3:
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time
-
+                    single_result['b_t']
+                    
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
 
-        if total_transfer>0:
-            print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
-        else:
-            print(today_date, 0)
+        # print(error_count,today_date,error_count/(len(db_result)+1))
 
-    location = 'D:/Luyu/transfer_data/all_year/dedicated/Nov_norm.shp'
+    if total_transfer > 0:
+        print(hour, len(dic_stops), total_transfer, round(
+            total_TTP/total_transfer, 2), round(total_missed_transfer/total_transfer, 4))
+    else:
+        print(hour, 0)
+
+    location = 'D:/Luyu/transfer_data/apc/hour_average_test/' + \
+        str(hour) + ".shp"
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -162,38 +182,28 @@ def analyze_transfer(start_date, end_date):
             trans_risk = float(value['one_c'])/float(value['totl_c'])
 
         w.record(key, value['totl_c'], value['zero_c'],
-                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk*100), float(value['max_TTP'])/60, var**0.5)
+                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk), float(value['max_TTP'])/60, var**0.5)
         w.point(float(value['lon']), float(value['lat']))
 
 
 if __name__ == '__main__':
-    date_list = []
-
-    start_date1 = date(2018, 5, 7)
-    end_date1 = date(2019, 1, 31)
-
-    '''b=0
-    for single_date2 in daterange(start_date1, end_date1):
-        that_time_stamp = find_gtfs_time_stamp(single_date2)
-        a=(datetime.datetime.utcfromtimestamp(that_time_stamp).strftime('%Y-%m-%d %H:%M:%S'))
-        if that_time_stamp!=b:
-            date_list.append(datetime.datetime.utcfromtimestamp(that_time_stamp).date())
-        b=that_time_stamp
-
-
-    print("GTFS_List",date_list)
-    if len(date_list)==1:
-        analyze_transfer(start_date1, end_date1)
-    else:
-        for i in range(len(date_list)):
-            print(i)
-            if i == 1:
-                print(start_date1, date_list[i+1])
-                analyze_transfer(start_date1, date_list[i+1])
-            elif i<len(date_list)-1 and i > 1:
-                print(date_list[i], date_list[i+1])
-                analyze_transfer(date_list[i], date_list[i+1])
-            elif i == len(date_list)-1:
-                print(date_list[i], end_date1)
-                analyze_transfer(date_list[i], end_date1)'''
-    analyze_transfer(start_date1, end_date1)
+    start_date = date(2018, 5, 4)
+    end_date = date(2019, 1, 31)
+    hour_list = range(24)
+    # hour_list=[8,9,17,18,22,23]
+    '''
+    cores = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(processes=cores)
+    date_range = daterange(start_date, end_date)
+    output=[]
+    output=pool.map(analyze_transfer, date_range)
+    pool.close()
+    pool.join()
+    '''
+    '''
+    date_range = daterange(start_date, end_date)
+    for i in date_range:
+        analyze_transfer(i)
+'''
+    for i in hour_list:
+        analyze_transfer(start_date, end_date, i)

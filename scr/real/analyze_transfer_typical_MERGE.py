@@ -1,4 +1,4 @@
-import shapefile
+import shapefile, time
 from pymongo import MongoClient
 from datetime import timedelta, date
 import datetime
@@ -41,8 +41,8 @@ db_time_stamps.sort()
 
 
 def find_gtfs_time_stamp(single_date):
-    today_seconds = int(
-        (single_date - date(1970, 1, 1)).total_seconds()) + 18000
+    today_date = single_date.strftime("%Y%m%d")  # date
+    today_seconds = time.mktime(time.strptime(today_date, "%Y%m%d"))
     backup = db_time_stamps[0]
     for each_time_stamp in db_time_stamps:
         if each_time_stamp - today_seconds > 86400:
@@ -51,20 +51,18 @@ def find_gtfs_time_stamp(single_date):
     return db_time_stamps[len(db_time_stamps) - 1]
 
 
-db_history = client.cota_transfer
+db_history = client.cota_merge_transfer
 
 # main loop
 # enumerate every day in the range
 
 
-def analyze_transfer(start_date, end_date):
-    date_range = daterange(start_date, end_date)
+def analyze_transfer(date_list):
+    date_range = []
+    for date_part in date_list:
+        date_range.append(date(date_part[2], date_part[0], date_part[1]))
     dic_stops = {}
     for single_date in date_range:
-        if (single_date - date(2018, 3, 10)).total_seconds() <= 0 or (single_date - date(2018, 11, 3)).total_seconds() > 0:
-            summer_time = 0
-        else:
-            summer_time = 1
         today_date = single_date.strftime("%Y%m%d")  # date
         that_time_stamp = find_gtfs_time_stamp(single_date)
 
@@ -105,7 +103,7 @@ def analyze_transfer(start_date, end_date):
             switch_status(single_result['status'], dic_stops[a_stop_id])
             if single_result['status'] < 3:
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time
+                    single_result['b_t']
 
                 total_transfer = total_transfer+1
                 total_TTP = total_TTP + single_TTP
@@ -120,17 +118,18 @@ def analyze_transfer(start_date, end_date):
             a_stop_id = single_result['a_st']
             if single_result['status'] < 3:
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time
+                    single_result['b_t']
 
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
 
-        if total_transfer>0:
-            print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4))
+        if total_transfer > 0:
+            print(today_date, len(dic_stops), total_transfer, round(
+                total_TTP/total_transfer, 2), round(total_missed_transfer/total_transfer, 4))
         else:
             print(today_date, 0)
 
-    location = 'D:/Luyu/transfer_data/all_year/dedicated/Nov_norm.shp'
+    location = 'D:/Luyu/transfer_data/apc/raining.shp'
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -162,38 +161,20 @@ def analyze_transfer(start_date, end_date):
             trans_risk = float(value['one_c'])/float(value['totl_c'])
 
         w.record(key, value['totl_c'], value['zero_c'],
-                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk*100), float(value['max_TTP'])/60, var**0.5)
+                 value['one_c'], value['two_c'], value['miss_c'], value['crit_c'], value['totl_TTP'], float(ave_TTP/60), (trans_risk), float(value['max_TTP'])/60, var**0.5)
         w.point(float(value['lon']), float(value['lat']))
 
 
 if __name__ == '__main__':
-    date_list = []
+    date_list = [[2, 24, 2018], [4, 3, 2018], [4, 15, 2018], [5, 15, 2018], [5, 21, 2018], [6, 21, 2018], [7, 3, 2018], [
+        7, 20, 2018], [8, 17, 2018], [9, 1, 2018], [9, 8, 2018], [9, 9, 2018], [9, 24, 2018], [11, 1, 2018], [12, 15, 2018], [12, 31, 2018]]
 
-    start_date1 = date(2018, 5, 7)
-    end_date1 = date(2019, 1, 31)
+    football_list = [[9, 1, 2018], [9, 8, 2018], [9, 22, 2018], [10, 6, 2018], [10, 13, 2018], [11, 3, 2018], [11, 24, 2018]]
+    
+    # print("football")
+    # analyze_transfer(football_list)
+    # print("football")
 
-    '''b=0
-    for single_date2 in daterange(start_date1, end_date1):
-        that_time_stamp = find_gtfs_time_stamp(single_date2)
-        a=(datetime.datetime.utcfromtimestamp(that_time_stamp).strftime('%Y-%m-%d %H:%M:%S'))
-        if that_time_stamp!=b:
-            date_list.append(datetime.datetime.utcfromtimestamp(that_time_stamp).date())
-        b=that_time_stamp
-
-
-    print("GTFS_List",date_list)
-    if len(date_list)==1:
-        analyze_transfer(start_date1, end_date1)
-    else:
-        for i in range(len(date_list)):
-            print(i)
-            if i == 1:
-                print(start_date1, date_list[i+1])
-                analyze_transfer(start_date1, date_list[i+1])
-            elif i<len(date_list)-1 and i > 1:
-                print(date_list[i], date_list[i+1])
-                analyze_transfer(date_list[i], date_list[i+1])
-            elif i == len(date_list)-1:
-                print(date_list[i], end_date1)
-                analyze_transfer(date_list[i], end_date1)'''
-    analyze_transfer(start_date1, end_date1)
+    print("raining")
+    analyze_transfer(date_list)
+    print("raining")
