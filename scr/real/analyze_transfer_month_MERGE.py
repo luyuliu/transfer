@@ -60,6 +60,10 @@ db_history = client.cota_merge_transfer
 def analyze_transfer(start_date, end_date):
     date_range = daterange(start_date, end_date)
     dic_stops = {}
+    
+    total_transfer = 0
+    total_TTP = 0
+    total_missed_transfer = 0
     for single_date in date_range:
         today_date = single_date.strftime("%Y%m%d")  # date
         today_seconds = time.mktime(time.strptime(today_date, "%Y%m%d"))
@@ -71,9 +75,6 @@ def analyze_transfer(start_date, end_date):
         db_result = list(db_today_collection.find({}))
 
         # print(db_result)
-        total_transfer = 0
-        total_TTP = 0
-        total_missed_transfer = 0
 
         for single_result in db_result:
             a_stop_id = single_result['a_st']

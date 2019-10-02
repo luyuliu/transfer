@@ -60,6 +60,9 @@ db_history = client.cota_transfer
 def analyze_transfer(start_date, end_date):
     date_range = daterange(start_date, end_date)
     dic_stops = {}
+    total_transfer = 0
+    total_TTP = 0
+    total_missed_transfer = 0
     for single_date in date_range:
         if (single_date - date(2018, 3, 10)).total_seconds() <= 0 or (single_date - date(2018, 11, 3)).total_seconds() > 0:
             summer_time = 0
@@ -74,9 +77,6 @@ def analyze_transfer(start_date, end_date):
         db_result = list(db_today_collection.find({}))
 
         # print(db_result)
-        total_transfer = 0
-        total_TTP = 0
-        total_missed_transfer = 0
 
         for single_result in db_result:
             a_stop_id = single_result['a_st']
@@ -199,11 +199,11 @@ if __name__ == '__main__':
             elif i == len(date_list)-1:
                 print(date_list[i], end_date1)
                 analyze_transfer(date_list[i], end_date1)'''
-    # for i in range(2, 12):
-    #     if i == 6:
-    #         analyze_transfer(date(2018, 5, 31), date(2018, i+1, 1))
-    #     else:
-    #         analyze_transfer(date(2018, i, 1), date(2018, i+1, 1))
+    for i in range(2, 12):
+        if i == 6:
+            analyze_transfer(date(2018, 5, 31), date(2018, i+1, 1))
+        else:
+            analyze_transfer(date(2018, i, 1), date(2018, i+1, 1))
     
-    # analyze_transfer(date(2018, 12, 1), date(2019, 1, 1))
+    analyze_transfer(date(2018, 12, 1), date(2019, 1, 1))
     analyze_transfer(date(2019, 1, 1), date(2019, 2, 1))
