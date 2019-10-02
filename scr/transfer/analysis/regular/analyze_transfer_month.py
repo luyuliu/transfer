@@ -199,11 +199,11 @@ if __name__ == '__main__':
             elif i == len(date_list)-1:
                 print(date_list[i], end_date1)
                 analyze_transfer(date_list[i], end_date1)'''
-    for i in range(2, 12):
-        if i == 6:
-            analyze_transfer(date(2018, 5, 31), date(2018, i+1, 1))
-        else:
-            analyze_transfer(date(2018, i, 1), date(2018, i+1, 1))
+    # for i in range(2, 12):
+    #     if i == 6:
+    #         analyze_transfer(date(2018, 5, 31), date(2018, i+1, 1))
+    #     else:
+    #         analyze_transfer(date(2018, i, 1), date(2018, i+1, 1))
     
-    analyze_transfer(date(2018, 12, 1), date(2019, 1, 1))
+    # analyze_transfer(date(2018, 12, 1), date(2019, 1, 1))
     analyze_transfer(date(2019, 1, 1), date(2019, 2, 1))
