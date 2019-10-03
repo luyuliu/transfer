@@ -51,7 +51,9 @@ def find_gtfs_time_stamp(single_date):
     return db_time_stamps[len(db_time_stamps) - 1]
 
 
-db_history = client.cota_merge_transfer
+db_history = client.cota_merge_dedicated
+
+dedicated_line = 2
 
 # main loop
 # enumerate every day in the range
@@ -62,7 +64,6 @@ def analyze_transfer(start_date, end_date):
     dic_stops = {}
     for single_date in date_range:
         today_date = single_date.strftime("%Y%m%d")  # date
-        today_seconds = time.mktime(time.strptime(today_date, "%Y%m%d"))
         that_time_stamp = find_gtfs_time_stamp(single_date)
 
         db_today_collection = db_history[today_date]
@@ -101,6 +102,7 @@ def analyze_transfer(start_date, end_date):
 
             switch_status(single_result['status'], dic_stops[a_stop_id])
             if single_result['status'] < 3:
+                
                 single_TTP = single_result['b_a_t'] - \
                     single_result['b_t']
 
@@ -112,10 +114,13 @@ def analyze_transfer(start_date, end_date):
                 dic_stops[a_stop_id]["totl_TTP"] += single_TTP
                 if single_TTP > dic_stops[a_stop_id]["max_TTP"]:
                     dic_stops[a_stop_id]["max_TTP"] = single_TTP
+                #if single_TTP>3600 or single_TTP<-100:
+                #    print(single_result['a_ro'],single_result['b_ro'], single_TTP)                  
 
         for single_result in db_result:
             a_stop_id = single_result['a_st']
             if single_result['status'] < 3:
+                
                 single_TTP = single_result['b_a_t'] - \
                     single_result['b_t']
 
@@ -127,7 +132,7 @@ def analyze_transfer(start_date, end_date):
         else:
             print(today_date, 0)
 
-    location = 'D:/Luyu/transfer_data/apc/nov.shp'
+    location = 'D:/Luyu/transfer_data/apc/dedicated/all.shp'
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
