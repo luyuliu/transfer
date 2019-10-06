@@ -61,6 +61,7 @@ def paralleling_transfers(single_date):
     that_time_stamp = find_gtfs_time_stamp(single_date)
     today_weekday = single_date.weekday()
 
+    print(that_time_stamp)
     db_seq=db_GTFS[str(that_time_stamp)+"_trip_seq"]
     db_today_collection = db_history[today_date]
     if today_weekday < 5:
@@ -109,8 +110,7 @@ def paralleling_transfers(single_date):
                 b_a_seq = ""
                 b_a_t = 9999999999
 
-                seq_query = list(db_seq.find({"service_id": str(
-                    service_id), "stop_id": single_result["b_st"], "trip_id": single_result["b_st"]}))
+                seq_query = list(db_seq.find({"service_id": str(service_id), "stop_id": single_result["b_st"], "trip_id": (single_result["b_tr"])}))
                 if seq_query == []:
                     continue
                 seq_query=seq_query[0]
@@ -213,7 +213,7 @@ def paralleling_transfers(single_date):
 
 
 if __name__ == '__main__':
-    start_date = date(2018, 5, 7)
+    start_date = date(2018, 11, 5)
     end_date = date(2019, 1, 31)
     cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=cores-5)
@@ -223,5 +223,5 @@ if __name__ == '__main__':
     pool.close()
     pool.join()
 
-    # start_date = date(2018, 9, 4)
+    # start_date = date(2018, 11, 5)
     # paralleling_transfers(start_date)

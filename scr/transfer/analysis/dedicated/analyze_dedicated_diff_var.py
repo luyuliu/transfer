@@ -89,6 +89,7 @@ def analyze_transfer(start_date, end_date):
         b_TTP = 0
         b_one_transfer=0
         b_two_transfer=0
+        var_diff = 0
 
         for single_result in db_result:
             calibration=0
@@ -156,6 +157,15 @@ def analyze_transfer(start_date, end_date):
                 #if single_TTP>3600 or single_TTP<-100:
                 #    print(single_result['a_ro'],single_result['b_ro'], single_TTP)                  
 
+        
+        if a_transfer + b_transfer != 0:
+            average_diff = total_TTP/(a_transfer + b_transfer)
+            total_ded_transfers = a_transfer + b_transfer
+        else:
+            average_diff = 0
+            total_ded_transfers = 0
+
+        ded_recount = 0
         for single_result in db_result:
             a_stop_id = single_result['a_st']
             if single_result['status'] < 3:
@@ -168,12 +178,15 @@ def analyze_transfer(start_date, end_date):
                 single_TTP = single_result['b_a_t'] - \
                     single_result['nor_b_a_t']+3600*summer_time-3600*calibration
                 
+                if single_result['a_ro']*single_result['a_ro'] == dedicated_line*dedicated_line or single_result['b_ro']*single_result['b_ro'] == dedicated_line*dedicated_line:
+                    var_diff += (single_TTP - average_diff)**2
+                    ded_recount += 1
 
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
 
         if total_transfer>0:
-            print(today_date, len(dic_stops), total_transfer, round(total_TTP/total_transfer,2), round(total_missed_transfer/total_transfer,4), total_dedicated_transfer, a_transfer, b_transfer, a_TTP, b_TTP, a_one_transfer, b_one_transfer, a_two_transfer, b_two_transfer)
+            print(today_date, total_ded_transfers, ded_recount, average_diff, var_diff)
         else:
             print(today_date, 0)
 
