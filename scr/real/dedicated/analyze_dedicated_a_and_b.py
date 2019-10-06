@@ -1,7 +1,7 @@
 import shapefile
 from pymongo import MongoClient
 from datetime import timedelta, date
-import datetime
+import datetime, time
 import multiprocessing
 client = MongoClient('mongodb://localhost:27017/')
 
@@ -41,8 +41,8 @@ db_time_stamps.sort()
 
 
 def find_gtfs_time_stamp(single_date):
-    today_seconds = int(
-        (single_date - date(1970, 1, 1)).total_seconds()) + 18000
+    today_date = single_date.strftime("%Y%m%d")  # date
+    today_seconds = time.mktime(time.strptime(today_date, "%Y%m%d"))
     backup = db_time_stamps[0]
     for each_time_stamp in db_time_stamps:
         if each_time_stamp - today_seconds > 86400:
@@ -51,7 +51,7 @@ def find_gtfs_time_stamp(single_date):
     return db_time_stamps[len(db_time_stamps) - 1]
 
 
-db_history = client.cota_dedicated
+db_history = client.cota_merge_dedicated
 
 dedicated_line = 2
 
@@ -63,11 +63,8 @@ def analyze_transfer(start_date, end_date):
     date_range = daterange(start_date, end_date)
     dic_stops = {}
     for single_date in date_range:
-        if (single_date - date(2018, 3, 10)).total_seconds() <= 0 or (single_date - date(2018, 11, 3)).total_seconds() > 0:
-            summer_time = 0
-        else:
-            summer_time = 1
         today_date = single_date.strftime("%Y%m%d")  # date
+        today_seconds = time.mktime(time.strptime(today_date, "%Y%m%d"))
         that_time_stamp = find_gtfs_time_stamp(single_date)
 
         db_today_collection = db_history[today_date]
@@ -119,7 +116,7 @@ def analyze_transfer(start_date, end_date):
             if single_result['status'] < 3:
                 
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time-3600*calibration
+                    single_result['b_t']
                 if single_result['a_ro']*single_result['a_ro'] == dedicated_line*dedicated_line:
                     a_transfer = a_transfer+1
                     total_dedicated_transfer = total_dedicated_transfer+1
@@ -154,7 +151,7 @@ def analyze_transfer(start_date, end_date):
             if single_result['status'] < 3:
                 
                 single_TTP = single_result['b_a_t'] - \
-                    single_result['b_t']+3600*summer_time-3600*calibration
+                    single_result['b_t']
 
                 dic_stops[a_stop_id]["totl_var"] += (float(single_TTP - (dic_stops[a_stop_id]["totl_TTP"]/(
                     dic_stops[a_stop_id]['zero_c']+dic_stops[a_stop_id]['one_c']+dic_stops[a_stop_id]['two_c']))) / 60)**2
@@ -164,7 +161,7 @@ def analyze_transfer(start_date, end_date):
         else:
             print(today_date, 0)
 
-    location = 'D:/Luyu/transfer_data/all_year/dedicated/a_and_b_dedicated.shp'
+    location = 'D:/Luyu/transfer_data/apc/dedicated/a_and_b_dedicated.shp'
     print(location)
     w = shapefile.Writer(location)
     w.field("stop_id", "C")
@@ -203,7 +200,7 @@ def analyze_transfer(start_date, end_date):
 if __name__ == '__main__':
     date_list = []
 
-    start_date1 = date(2018, 11, 4)
+    start_date1 = date(2018, 11, 5)
     end_date1 = date(2019, 1, 31)
 
     '''b=0

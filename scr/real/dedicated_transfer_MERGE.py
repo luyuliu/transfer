@@ -19,7 +19,7 @@ import multiprocessing
 # database setup
 client = MongoClient('mongodb://localhost:27017/')
 db_GTFS = client.cota_gtfs
-db_realtime=client.cota_real_time
+db_realtime=client.cota_apc_real_time
 db_history = client.cota_merge_transfer
 
 db_time_stamps_set=set()
@@ -74,7 +74,7 @@ def paralleling_transfers(single_date):
     # data retrival
     # the scheduled transfers for today
     db_validated_transfer = list(db_today_collection.find({}))
-    db_realtime_collection=db_realtime["R"+today_date]
+    db_realtime_collection=db_realtime[today_date]
     print(today_date)
 
     Normal_count = 0
@@ -146,7 +146,7 @@ def paralleling_transfers(single_date):
                 b_a_seq_real=real_b_seq["seq"]
                 b_a_tr_real=real_b_seq["trip_id"]
 
-                schedule_b_seq=list(db_seq.find({"service_id":str(service_id),"stop_id":single_result["b_st"],"trip_id":single_result["b_tr"]}))[0]
+                schedule_b_seq=db_seq.find_one({"service_id":str(service_id),"stop_id":single_result["b_st"],"trip_id":single_result["b_tr"]})
 
                 b_a_seq_schedule=schedule_b_seq["seq"]
 
