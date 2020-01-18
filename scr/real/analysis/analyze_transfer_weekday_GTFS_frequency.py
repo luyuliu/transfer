@@ -25,6 +25,9 @@ walking_time_limit = 10  # min
 criteria = 0  # seconds
 designated_route_id = 2
 
+db_transfer = client.cota_transfer
+
+
 
 def reduce_diff(start_date, end_date):
     date_range = transfer_tools.daterange(start_date, end_date)
@@ -35,54 +38,62 @@ def reduce_diff(start_date, end_date):
         today_weekday = single_date.weekday()
         today_date = single_date.strftime("%Y%m%d")  # date
         col_diff = db_diff[today_date]
+        col_diff.create_index([("trip_id", 1)])
         today_seconds = time.mktime(time.strptime(today_date, "%Y%m%d"))
-
-        rl_opt_result = list(
-            col_diff.find({}))
+        col_transfer = db_transfer[today_date]
+        rl_transfer = list(col_transfer.find({}))
         
+        trip_list = []
+        for each_transfer_record in rl_transfer:
+            a_trip_id = each_transfer_record["a_tr"]
+            b_trip_id = each_transfer_record["b_tr"]
 
-        for each_record in rl_opt_result:
-            time_alt = each_record["time"] # ar
-            time_arr = each_record["rand_time"]
+            if a_trip_id in trip_list:
+                pass
+            else:
+                each_record = col_diff.find_one({"trip_id": a_trip_id})
+                if each_record==None:
+                    pass
+                else:
+                    time_alt = each_record["time"] # ar
+                    time_arr = each_record["rand_time"]
 
-            try:
-                time_arr = int(time_arr)
-            except:
-                continue
+                    try:
+                        time_arr = int(time_arr)
+                    except:
+                        continue
 
-            # time_alt = each_record["time_actual"] # nr
-            # time_arr = each_record["time_normal"]
-
-            # time_alt = each_record["time_er_alt"] # er
-            # time_arr = each_record["time_er_arr"]
+                    if type(time_alt) is int and type(time_arr) is not str and time_alt != 0 and time_arr != 0:                
+                        # print(diff_seconds)
+                        if time_alt - time_arr < 0:
+                            continue
+                        wt_list[today_weekday] += time_alt - time_arr
+                        wt_list_count[today_weekday] += 1
+                    trip_list.append(a_trip_id)
             
-            # time_alt = each_record["time_er_alt"] # er
-            # time_arr = each_record["time_er_arr"]
+            if b_trip_id in trip_list:
+                pass
+            else:
+                each_record = col_diff.find_one({"trip_id": b_trip_id})
+                if each_record == None:
+                    pass
+                else:
+                    time_alt = each_record["time"] # ar
+                    time_arr = each_record["rand_time"]
 
-            if type(time_alt) is int and type(time_arr) is not str and time_alt != 0 and time_arr != 0:                
-                # print(diff_seconds)
-                if time_alt - time_arr < 0:
-                    continue
-                wt_list[today_weekday] += time_alt - time_arr
-                wt_list_count[today_weekday] += 1
+                    try:
+                        time_arr = int(time_arr)
+                    except:
+                        continue
 
-        # for each_record in rl_opt_result:
-        #     for i in range(10):
-        #         try:
-        #             # time_alt = each_record["time_alt_" + str(i)]
-        #             # time_arr = each_record["time_smart_" + str(i)]
+                    if type(time_alt) is int and type(time_arr) is not str and time_alt != 0 and time_arr != 0:                
+                        # print(diff_seconds)
+                        if time_alt - time_arr < 0:
+                            continue
+                        wt_list[today_weekday] += time_alt - time_arr
+                        wt_list_count[today_weekday] += 1
+                    trip_list.append(b_trip_id)
 
-        #             time_alt = each_record["time_rr_alt_" + str(i)]
-        #             time_arr = each_record["time_rr_arr_" + str(i)]
-        #             diff_seconds = int((time_alt - today_seconds)/3600)
-        #             if diff_seconds>23:
-        #                 diff_seconds = 23
-        #         except:
-        #             continue
-
-        #         if type(time_alt) is int and type(time_arr) is int and time_alt != 0 and time_arr != 0:
-        #             wt_list[diff_seconds] += time_alt - time_arr
-        #             wt_list_count[diff_seconds] += 1
         
         print(today_date,end =" ")
         for i in range (7):
