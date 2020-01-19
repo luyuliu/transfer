@@ -1,6 +1,5 @@
 football_data = read.csv("I:\\OSU\\academic\\transfer_risk\\Transfer\\doc\\football_test.csv")
 
-
 library(lattice)
 
 ks.test(football_data$ATTP_football_gtfs, football_data$ATTP_all_gtfs)
