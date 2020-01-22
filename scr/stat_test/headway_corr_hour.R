@@ -1,8 +1,8 @@
-data = read.csv("C:\\Users\\liu.6544\\Documents\\GitHub\\transfer\\doc\\headway_hour.csv")
+data = read.csv("C:\\Users\\liu.6544\\Documents\\GitHub\\transfer\\doc\\headway_weekday.csv")
 
 cor.test(data$ATTP_gtfs, data$Frequency)
-cor.test(data$TR_gtfs, data$Frequency)
 cor.test(data$ATTP_apc, data$Frequency)
+cor.test(data$TR_gtfs, data$Frequency)
 cor.test(data$TR_apc, data$Frequency)
 
 library("ggpubr")

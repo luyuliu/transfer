@@ -1,4 +1,4 @@
-data = read.csv("I:\\OSU\\academic\\transfer_risk\\Transfer\\doc\\rain_test.csv")
+data = read.csv("C:\\Users\\liu.6544\\Documents\\GitHub\\transfer\\doc\\test_doc\\rain_test.csv")
 
 
 library(lattice)

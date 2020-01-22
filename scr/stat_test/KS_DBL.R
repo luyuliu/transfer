@@ -1,12 +1,17 @@
-football_data = read.csv("I:\\OSU\\academic\\transfer_risk\\Transfer\\doc\\football_test.csv")
+dbl_data = read.csv("C:\\Users\\liu.6544\\Documents\\GitHub\\transfer\\doc\\nor_dbl_gtfs.csv")
 
 library(lattice)
 
-ks.test(football_data$ATTP_football_gtfs, football_data$ATTP_all_gtfs)
-ks.test(football_data$ATTP_football_apc, football_data$ATTP_all_apc)
+ks.test(dbl_data$ave_ATTP_normal, dbl_data$ave_ATTP_dbl)
+ks.test(dbl_data$ave_tr_normal, dbl_data$ave_tr_dbl)
 
-ks.test(football_data$TR_football_gtfs, football_data$TR_all_gtfs)
-ks.test(football_data$TR_football_apc, football_data$TR_all_apc)
+dbl_data = read.csv("C:\\Users\\liu.6544\\Documents\\GitHub\\transfer\\doc\\nor_dbl_apc.csv")
+
+library(lattice)
+
+ks.test(dbl_data$ave_ATTP_normal, dbl_data$ave_ATTP_dbl)
+ks.test(dbl_data$ave_tr_normal, dbl_data$ave_tr_dbl)
+
 
 #wilcox.test()
 
