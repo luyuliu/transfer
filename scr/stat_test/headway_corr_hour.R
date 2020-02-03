@@ -18,8 +18,8 @@ attp_apc = ggscatter(data, x = "Frequency", y = "ATTP_apc", size = 4,
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Frequency (hour¯¹)", ylab = "ATTP for APC-GTFS (minutes)")
 
-ggexport(attp_apc, plotlist = NULL, filename = 'C:/Users/liu.6544/Documents/GitHub/transfer/attp_apc.png', ncol = NULL,
-         nrow = NULL, width = 4800, height = 4800, pointsize = 12,
+ggexport(attp_apc, plotlist = NULL, filename = 'C:/Users/liu.6544/Documents/GitHub/transfer/doc/corr_pics/attp_apc.png', ncol = NULL,
+         nrow = NULL, width = 3200, height = 3200, pointsize = 12,
          res = 300, verbose = TRUE)
 
 
@@ -33,8 +33,8 @@ tr_apc = ggscatter(data, x = "Frequency", y = "TR_apc", size = 4,
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Frequency (hour¯¹)", ylab = "TR for APC-GTFS (%)")
 
-ggexport(tr_apc, plotlist = NULL, filename = 'C:/Users/liu.6544/Documents/GitHub/transfer/tr_apc.png', ncol = NULL,
-         nrow = NULL, width = 4800, height = 4800, pointsize = 12,
+ggexport(tr_apc, plotlist = NULL, filename = 'C:/Users/liu.6544/Documents/GitHub/transfer/doc/corr_pics/tr_apc.png', ncol = NULL,
+         nrow = NULL, width = 3200, height = 3200, pointsize = 12,
          res = 300, verbose = TRUE)
 
 
