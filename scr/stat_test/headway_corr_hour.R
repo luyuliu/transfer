@@ -18,9 +18,9 @@ attp_apc = ggscatter(data, x = "Frequency", y = "ATTP_apc", size = 2.5,
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Frequency (hour¯¹)", ylab = "ATTP for APC-GTFS (minutes)")
 
-ggexport(attp_apc, plotlist = NULL, filename = 'C:/Users/liu.6544/Documents/GitHub/transfer/doc/corr_pics/attp_apc.png', ncol = NULL,
-         nrow = NULL, width = 3200, height = 3200, pointsize = 12,
-         res = 800, verbose = TRUE)
+ggexport(attp_apc, plotlist = NULL, filename = 'C:/Users/liu.6544/Documents/GitHub/transfer/doc/corr_pics/attp_apc.pdf', ncol = NULL,
+         nrow = NULL, width = 32, height = 32, pointsize = 12,
+         res = NA, verbose = TRUE)
 
 
 ggscatter(data, x = "Frequency", y = "TR_gtfs", 
@@ -33,8 +33,30 @@ tr_apc = ggscatter(data, x = "Frequency", y = "TR_apc", size = 2.5,
                    cor.coef = TRUE, cor.method = "pearson",
           xlab = "Frequency (hour¯¹)", ylab = "TR for APC-GTFS (%)")
 
-ggexport(tr_apc, plotlist = NULL, filename = 'C:/Users/liu.6544/Documents/GitHub/transfer/doc/corr_pics/tr_apc.png', ncol = NULL,
+ggexport( tr_apc, plotlist = NULL, filename = 'C:/Users/liu.6544/Documents/GitHub/transfer/doc/corr_pics/tr_apc.eps', ncol = NULL,
          nrow = NULL, width = 3200, height = 3200, pointsize = 12,
-         res = 800, verbose = TRUE)
+         res = 800, verbose = TRUE, device="cairo_ps")
 
+
+library(ggplot2)
+
+p_tr = ggplot(data, aes(x=Frequency, y=TR_apc)) +
+  geom_point(shape= 1, size = 4) +    # Use hollow circles
+  geom_smooth(method=lm) +
+  xlim(NA, 2.49) +
+  theme(text = element_text(size=18),
+        axis.text.x = element_text(angle = 0))
+p_tr = p_tr + labs(x = "Frequency (1/hour)", y = "Transfer risk for APC-GTFS (%)")
+p_tr
+ggsave("C:/Users/liu.6544/Documents/GitHub/transfer/doc/corr_pics/tr_apc.svg")
+
+p_tr = ggplot(data, aes(x=Frequency, y=ATTP_apc)) +
+  geom_point(shape= 1, size = 4) +    # Use hollow circles
+  geom_smooth(method=lm) +
+  xlim(NA, 2.49) +
+  theme(text = element_text(size=18),
+        axis.text.x = element_text(angle = 0))
+p_tr = p_tr + labs(x = "Frequency (1/hour)", y = "Average total time penalty for APC-GTFS (minutes)")
+p_tr
+ggsave("C:/Users/liu.6544/Documents/GitHub/transfer/doc/corr_pics/attp_apc.svg")
 
